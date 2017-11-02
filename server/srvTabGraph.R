@@ -47,6 +47,12 @@ filtered_data <- reactive({
   if(input$filter_freq){
     tempo<-filter_data_freq(tempo,freqs()[["freq"]],input$freq_error,input$center_freq,freqs()[["label"]])
   }
+  if (input$filter_strength){
+    tempo<-filter_signal_strength(tempo,input$signal_strength)
+  }
+  if (input$filter_bw){
+    tempo<-filter_signal_bandwith(tempo,input$signal_bw)
+  }
   if(input$filter_freq&&input$filter_one_freq){
     return(NULL)
   }

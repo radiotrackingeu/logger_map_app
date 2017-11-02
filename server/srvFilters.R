@@ -9,7 +9,11 @@ filter_signal_bandwith <- function(data,bandwith){
 
 filter_signal_strength <- function(data,strength){
   data$strength[data$strength==-1000]<- (-60) # old rtlsdrdetect outputs for some reason -1000
-  return(subset(data, (data$strength>(strength[1])) & (data$strength<(strength[2]))))
+  print(head(data))
+  print(str(strength))
+  foo<-subset(data, (data$strength>as.numeric(strength[1])) & (data$strength<as.numeric(strength[2])))
+  print(str(foo))
+  return(foo)
 }
 
 filter_data_freq <- function(data,freq,freq_error,mid_freq,freq_labels = NULL){
