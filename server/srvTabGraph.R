@@ -3,10 +3,7 @@
 
 plot_time_signal <- function(data, multifilter){
   
-  require(ggplot2)
-  #qplot(data$timestamp, data$strength, xlab = "Time", ylab = "Signal Strength", col = data$freq_tag, size=I(0.8)) + labs(colour = "Frequencies") 
-  print(paste("data in plot_time_signal",str(data)))
-  p<-ggplot(data) + geom_point(aes(timestamp, strength, color=receiver), size=I(0.8)) + labs(x="Time", y = "Signal Strength") 
+  p<-ggplot(data) + geom_point(aes(timestamp, strength), size=I(0.8)) + labs(x="Time", y = "Signal Strength") 
   if(multifilter){
     p + facet_wrap(~ data$freq_tag)
   }
@@ -98,6 +95,14 @@ output$histo_strength <- renderPlot({
   
   ggplot(filtered_data()) + geom_histogram(aes(strength),bins= 200)
 })
+
+output$histo_bandwidth<- renderPlot({
+  if (is.null(filtered_data()))
+    return(NULL)
+  
+  ggplot(filtered_data()) + geom_histogram(aes(bw),bins= 200)
+})
+
 
 output$total_counts<-renderText({
   if (is.null(logger_data()))

@@ -1,10 +1,11 @@
 ############ srvTabData.R ############
 
-# read data
+# read data to db
 logger_data<- reactive({
   inFile <- input$data_logger_input
   if (is.null(inFile))
     return(NULL)
+  print(inFile)
   switch (input$data_type_input, 
           CSV={ data <- read_logger_data(inFile$datapath)},
           SQL={   # open db
@@ -19,11 +20,4 @@ logger_data<- reactive({
             dbDisconnect(con)
             })
   data
-})
-
-# read project meta file: locations
-antennae_data <- reactive({
-  if (is.null(input$data_position_input)) return(NULL)
-  read.csv2(input$data_position_input$datapath, dec=".", stringsAsFactors = FALSE, row.names = NULL)
-  
 })

@@ -27,11 +27,7 @@ filter_data_freq <- function(data,freq,freq_error,mid_freq,freq_labels = NULL){
       freq_sorted<-rbind.data.frame(freq_sorted, tmp)
     }
   }
-  data<-freq_sorted
   
-  freq_name<-paste0(as.character((freq)/1000),"MHz")
-  #one_inv<-subset(data, (freq> low_freq) & (freq< high_freq) & (duration > low_pulse_len) & (duration < high_pulse_len) )
-  
-  #data$timestamp<-as.POSIXct(paste(data$Date, data$, "%Y-%m-%d %H:%M:%S", tz="UTC")
-  return(data)
+  #freq_name<-paste0(as.character((freq)/1000),"MHz")
+  return(freq_sorted)
 }

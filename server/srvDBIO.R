@@ -22,11 +22,18 @@ filter_data_and_save <- function(filepath_db,filepath_filterSettings, receiver){
 
 # read csv logger file to db
 add_logger_file_to_db <- function(file,filepath_db,receiver){
-  lines_to_skip<-findHeaders(file)
+  lines_to_skip<-findHeader(file)
   if (is.null(lines_to_skip)) return()
+  MidFreq<-findMidFreq(file)
+  
   data<-read.csv2(filepath, skip=lines_to_skip,stringsAsFactors = FALSE, dec = ".")
-  data$X<-NULL
+  data$X<-NULL # bug in the log file - lines ends with ";"
+  
+  data$timestamp<-as.POSIXct(data$time, "%Y-%m-%d %H:%M:%S", tz="UTC")
+  data$freq<-(data$freq+MidFreq)/1000
+  
   con = dbConnect(RSQLite::SQLite(), dbname=filepath_db)
+  
   if(any(dbListTables(con)==receiver)){
     tmp_df<-dbReadTable(con,receiver)
     df<-unique(rbind(data,tmp_df))
@@ -36,6 +43,12 @@ add_logger_file_to_db <- function(file,filepath_db,receiver){
     dbWriteTable(con, paste0("receiver_",receiver), data)
   }
   dbDisconnect(con)
+}
+
+add_multiple_logger_files_to_db <- function(files,filepath_db,receiver){
+  for(f in files){
+    add_logger_file_to_db(f,filepath_db,receiver)
+  }
 }
 
 # reads all files in folder and adds found data to receiver table in db
