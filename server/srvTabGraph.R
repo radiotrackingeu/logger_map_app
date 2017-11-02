@@ -1,11 +1,12 @@
 ############ srvTabGraph.R ############
 
 
-plot_time_signal <- function(data, mid_freq = 150100, multifilter){
+plot_time_signal <- function(data, multifilter){
   
   require(ggplot2)
   #qplot(data$timestamp, data$strength, xlab = "Time", ylab = "Signal Strength", col = data$freq_tag, size=I(0.8)) + labs(colour = "Frequencies") 
-  p<-ggplot(data) + geom_point(aes(timestamp, strength), size=I(0.8)) + labs(x="Time", y = "Signal Strength") 
+  print(paste("data in plot_time_signal",str(data)))
+  p<-ggplot(data) + geom_point(aes(timestamp, strength, color=receiver), size=I(0.8)) + labs(x="Time", y = "Signal Strength") 
   if(multifilter){
     p + facet_wrap(~ data$freq_tag)
   }
@@ -51,11 +52,14 @@ filtered_data <- reactive({
     tempo<-filter_signal_strength(tempo,input$signal_strength)
   }
   if (input$filter_bw){
-    tempo<-filter_signal_bandwith(tempo,input$signal_bw)
+    tempo<-filter_signal_bandwidth(tempo,input$signal_bw)
   }
   if(input$filter_freq&&input$filter_one_freq){
     return(NULL)
   }
+  validate(
+    need(nrow(tempo)[1]>0, "Oh no, there is no data to plot! Did you filter it all out?")
+  )
   return(tempo)
 } )
 
@@ -65,10 +69,10 @@ output$facet <- renderPlot({
   if(is.null(filtered_data()))
     return(NULL)
   if(input$filter_freq){
-    plot_time_signal(filtered_data(),input$center_freq,TRUE)
+    plot_time_signal(filtered_data(),TRUE)
   }
   else{
-    plot_time_signal(filtered_data(),input$center_freq,input$filter_one_freq)
+    plot_time_signal(filtered_data(),input$filter_one_freq)
   }
   
 })
@@ -99,7 +103,7 @@ output$total_counts<-renderText({
   if (is.null(logger_data()))
     return(NULL)
   
-  return(paste("Number of observations in plot",dim(data())[1],"of total", dim(logger_data())[1]))
+  return(paste("Number of observations in plot",dim(filtered_data())[1],"of total", dim(logger_data())[1]))
 })
 
 output$downloadData <- downloadHandler(

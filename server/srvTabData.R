@@ -10,10 +10,12 @@ logger_data<- reactive({
           SQL={   # open db
             con <- dbConnect(RSQLite::SQLite(),inFile$datapath)
             data<-NULL
+            # data$receiver <- 0
             for(t in dbListTables(con)) {
-              data <- rbind(data,dbReadTable(con,t))
-              #data$receiver <- t
+              data <- rbind(data,cbind(dbReadTable(con,t),receiver=t))
+              # data$receiver <- c(t)
             }
+            data$timestamp<-as.POSIXct(data$time, "%Y-%m-%d %H:%M:%S", tz="UTC")
             dbDisconnect(con)
             })
   data

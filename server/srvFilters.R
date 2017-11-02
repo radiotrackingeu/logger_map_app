@@ -3,17 +3,13 @@ filter_data_length <- function(data,pulse_length){
   return(subset(data, (data$duration>(pulse_length[1])) & (data$duration<(pulse_length[2]))))
 }
 
-filter_signal_bandwith <- function(data,bandwith){
-  return(subset(data, (data$bw>(bandwith[1])) & (data$bw<(bandwith[2]))))
+filter_signal_bandwidth <- function(data,pulse_bandwidth){
+  return(subset(data, (data$bw>(pulse_bandwidth[1])) & (data$bw<(pulse_bandwidth[2]))))
 }
 
-filter_signal_strength <- function(data,strength){
+filter_signal_strength <- function(data,pulse_strength){
   data$strength[data$strength==-1000]<- (-60) # old rtlsdrdetect outputs for some reason -1000
-  print(head(data))
-  print(str(strength))
-  foo<-subset(data, (data$strength>as.numeric(strength[1])) & (data$strength<as.numeric(strength[2])))
-  print(str(foo))
-  return(foo)
+  return(subset(data, (data$strength>pulse_strength[1]) &(data$strength<pulse_strength[2]) ))
 }
 
 filter_data_freq <- function(data,freq,freq_error,mid_freq,freq_labels = NULL){
