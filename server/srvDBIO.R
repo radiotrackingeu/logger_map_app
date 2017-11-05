@@ -20,16 +20,31 @@ filter_data_and_save <- function(filepath_db,filepath_filterSettings, receiver){
 }
 
 
+
+output$download_filtered_data_sqlite <- downloadHandler(
+    filename = "filtered_data.sqlite",
+    content = function(file) {
+      con <- dbConnect(RSQLite::SQLite(), file)
+      print(str(filtered_data()))
+      dbWriteTable(con,"rteu_filtered",filtered_data(),overwrite=TRUE)
+      dbWriteTable(con,"rteu_freqs",freqs(),overwrite=TRUE)
+      dbWriteTable(con,"rteu_antenna",antennae_data(),overwrite=TRUE)
+      dbDisconnect(con)
+    }
+    
+  )
+  
+  
+
 # read csv logger file to db
 add_logger_file_to_db <- function(file,filepath_db,receiver){
   lines_to_skip<-findHeader(file)
   if (is.null(lines_to_skip)) return()
   MidFreq<-findMidFreq(file)
   
-  data<-read.csv2(filepath, skip=lines_to_skip,stringsAsFactors = FALSE, dec = ".")
+  data<-read.csv2(file, skip=lines_to_skip,stringsAsFactors = FALSE, dec = ".")
   data$X<-NULL # bug in the log file - lines ends with ";"
   
-  data$timestamp<-as.POSIXct(data$time, "%Y-%m-%d %H:%M:%S", tz="UTC")
   data$freq<-(data$freq+MidFreq)/1000
   
   con = dbConnect(RSQLite::SQLite(), dbname=filepath_db)
@@ -37,10 +52,10 @@ add_logger_file_to_db <- function(file,filepath_db,receiver){
   if(any(dbListTables(con)==receiver)){
     tmp_df<-dbReadTable(con,receiver)
     df<-unique(rbind(data,tmp_df))
-    dbWriteTable(con, paste0("receiver_",receiver), df, overwrite=TRUE)
+    dbWriteTable(con, receiver, df, overwrite=TRUE)
   }
   else{
-    dbWriteTable(con, paste0("receiver_",receiver), data)
+    dbWriteTable(con, receiver, data)
   }
   dbDisconnect(con)
 }
@@ -56,7 +71,7 @@ get_all_logger_data_in_folder <-function(folder, file_db ,receiver){
   #get all file names first
   
   files <- list.files(folder)
-  
+  print(files)
   for(f in files){
     print(paste0(folder,f))
     add_logger_file_to_db(paste0(folder,f),file_db,receiver)
@@ -70,8 +85,8 @@ get_logger_data_in_subfolders <-function(folder, file_db){
   #get all file names first
   
   folders <- list.dirs(folder, full.names = FALSE, recursive = FALSE)
-  
   for(sf in folders){
-    get_all_logger_data_in_folder(paste0(folder,sf,"/"),file_db,sf)
+    get_all_logger_data_in_folder(paste0(folder,"\\",sf,"\\"),file_db,sf)
+    print(paste0(folder,"\\",sf,"\\"))
   }
 }

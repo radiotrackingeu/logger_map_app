@@ -1,7 +1,13 @@
 ############ srvTabData.R ############
 
 # read data to db
-logger_data<- reactive({
+
+# 1. get or create db
+# 2. add file one by one to db
+# 3. save/download new db
+
+
+logger_data <- reactive({
   inFile <- input$data_logger_input
   if (is.null(inFile))
     return(NULL)

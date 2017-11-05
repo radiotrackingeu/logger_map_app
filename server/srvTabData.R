@@ -10,10 +10,9 @@ logger_data<- reactive({
           SQL={   # open db
             con <- dbConnect(RSQLite::SQLite(),inFile$datapath)
             data<-NULL
-            # data$receiver <- 0
             for(t in dbListTables(con)) {
+              print(t)
               data <- rbind(data,cbind(dbReadTable(con,t),receiver=t))
-              # data$receiver <- c(t)
             }
             data$timestamp<-as.POSIXct(data$time, "%Y-%m-%d %H:%M:%S", tz="UTC")
             dbDisconnect(con)
@@ -21,9 +20,14 @@ logger_data<- reactive({
   data
 })
 
+freqs <- reactive({
+    inFile <- input$freq_file
+    if(is.null(inFile)) return(NULL)
+    return(read.csv2(inFile$datapath,stringsAsFactors = FALSE))
+})
+
 # read project meta file: locations
 antennae_data <- reactive({
-  if (is.null(input$data_position_input)) return(NULL)
+  if(is.null(input$data_position_input)) return(NULL)
   read.csv2(input$data_position_input$datapath, dec=".", stringsAsFactors = FALSE, row.names = NULL)
-  
 })

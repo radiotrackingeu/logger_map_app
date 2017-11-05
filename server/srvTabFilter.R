@@ -1,9 +1,34 @@
 ############ srvTabGraph.R ############
 
+# Change upon data input
+observe({
+  rec_names <- c("all",as.character(unique(logger_data()$receiver)))
+  updateSelectInput(session, "input_select_receiver", label = "Select Receiver", choices = rec_names, selected = "all")
+})
+
+observe({
+  min_date<-min(logger_data()$timestamp)
+  max_date<-max(logger_data()$timestamp)
+  updateSliderInput(session, "slider_datetime",min=min_date,max=max_date,value = c(min_date,max_date) )
+})
+
+observe({
+  updateSelectInput(session, "choose_tag", label = "Select Tag", choices = c("all",freqs()[["label"]]))
+})
+
+observe({
+  updateSliderInput(session, "choose_single_data_set",min=1,max=nrow(filtered_data()))
+})
+
+output$single_freq_num_input <- renderUI(
+  if(input$filter_one_freq){
+    numericInput("single_freq", "", value = 150175)
+  }
+)
 
 plot_time_signal <- function(data, multifilter){
   
-  p<-ggplot(data) + geom_point(aes(timestamp, strength), size=I(0.8)) + labs(x="Time", y = "Signal Strength") 
+  p<-ggplot(data) + geom_point(aes(timestamp, strength, color=receiver), size=I(0.8)) + labs(x="Time", y = "Signal Strength")
   if(multifilter){
     p + facet_wrap(~ data$freq_tag)
   }
@@ -13,29 +38,19 @@ plot_time_signal <- function(data, multifilter){
 }
 
 
-# list of frequencies to watch
-freqs <- reactive({
-  inFile <- input$freq_file
-  if(is.null(inFile)){
-    tmp<-NULL
-    for(i in 1:9)
-      if(input[[paste0("act_freq_",i)]]){
-        zws<-data.frame(freq=input[[paste0("freq",i)]],label=input[[paste0("freq_id_",i)]])
-        tmp<-rbind.data.frame(tmp,zws)
-      }
-    return(tmp)
-  }
-  else{
-    return(read.csv2(inFile$datapath))
-  }
-  
-})
-
 # applying filters
 filtered_data <- reactive({
   if (is.null(logger_data()))
     return(NULL)
   tempo<-logger_data()
+  
+  #filter receivers
+  if(!any(input$input_select_receiver=="all")){
+    tempo<-subset(tempo,tempo$receiver==input$input_select_receiver)
+  }
+  #filter date/time
+  tempo<-subset(tempo, (tempo$timestamp>=input$slider_datetime[1])&(tempo$timestamp<=input$slider_datetime[2]) )
+  
   if(input$filter_length){
     tempo<-filter_data_length(tempo,input$signal_length)
   }
@@ -45,14 +60,20 @@ filtered_data <- reactive({
   if(input$filter_freq){
     tempo<-filter_data_freq(tempo,freqs()[["freq"]],input$freq_error,input$center_freq,freqs()[["label"]])
   }
-  if (input$filter_strength){
+  if(input$filter_strength){
     tempo<-filter_signal_strength(tempo,input$signal_strength)
   }
-  if (input$filter_bw){
+  if(input$filter_bw){
     tempo<-filter_signal_bandwidth(tempo,input$signal_bw)
   }
   if(input$filter_freq&&input$filter_one_freq){
     return(NULL)
+  }
+  if(input$choose_tag!="all"){
+    tempo<-subset(tempo,tempo$freq_tag==input$choose_tag)
+  }
+  if(input$activate_single_data){
+    tempo <- tempo[order(tempo$timestamp),]
   }
   validate(
     need(nrow(tempo)[1]>0, "Oh no, there is no data to plot! Did you filter it all out?")
@@ -110,12 +131,3 @@ output$total_counts<-renderText({
   
   return(paste("Number of observations in plot",dim(filtered_data())[1],"of total", dim(logger_data())[1]))
 })
-
-output$downloadData <- downloadHandler(
-  filename = function() {
-    paste0("frequencies-", Sys.Date(), ".csv")
-  },
-  content = function(file) {
-    write.csv2(freqs(), file)
-  }
-)
