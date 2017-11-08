@@ -26,7 +26,7 @@ output$download_filtered_data_sqlite <- downloadHandler(
     content = function(file) {
       con <- dbConnect(RSQLite::SQLite(), file)
       print(str(filtered_data()))
-      dbWriteTable(con,"rteu_filtered",filtered_data(),overwrite=TRUE)
+      dbWriteTable(con,"rteu_logger_data",filtered_data(),overwrite=TRUE)
       dbWriteTable(con,"rteu_freqs",freqs(),overwrite=TRUE)
       dbWriteTable(con,"rteu_antenna",antennae_data(),overwrite=TRUE)
       dbDisconnect(con)
@@ -37,25 +37,40 @@ output$download_filtered_data_sqlite <- downloadHandler(
   
 
 # read csv logger file to db
-add_logger_file_to_db <- function(file,filepath_db,receiver){
+add_logger_file_to_db <- function(file,filepath_db,receiver_name=NULL){
   lines_to_skip<-findHeader(file)
-  if (is.null(lines_to_skip)) return()
+  if (is.null(lines_to_skip)){
+    print("Couldn't find the Headers in Logger file")
+    return()
+  } 
   MidFreq<-findMidFreq(file)
+  if (is.null(MidFreq)){
+    print("Couldn't find the Center Frequency in Logger file")
+    return()
+  } 
   
-  data<-read.csv2(file, skip=lines_to_skip,stringsAsFactors = FALSE, dec = ".")
+  data<-read.csv2(file, skip=lines_to_skip,stringsAsFactors = FALSE, dec = ".", skipNul = TRUE)
+  
+  if(!is.null(receiver_name)){
+    data$receiver<-receiver_name
+  }
+  
   data$X<-NULL # bug in the log file - lines ends with ";"
   
-  data$freq<-(data$freq+MidFreq)/1000
+  data$freq<-(data$freq+MidFreq)/1000 # Correct to abosult Frequency in kHz
   
   con = dbConnect(RSQLite::SQLite(), dbname=filepath_db)
   
-  if(any(dbListTables(con)==receiver)){
-    tmp_df<-dbReadTable(con,receiver)
+  if(any(dbListTables(con)=="rteu_logger_data")){
+    tmp_df<-dbReadTable(con,"rteu_logger_data")
+    if(!any(names(tmp_df)=="receiver")){
+      tmp_df$receiver<-"not_specified"
+    }
     df<-unique(rbind(data,tmp_df))
-    dbWriteTable(con, receiver, df, overwrite=TRUE)
+    dbWriteTable(con, "rteu_logger_data", df, overwrite=TRUE)
   }
   else{
-    dbWriteTable(con, receiver, data)
+    dbWriteTable(con, "rteu_logger_data", data)
   }
   dbDisconnect(con)
 }

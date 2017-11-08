@@ -7,8 +7,11 @@ observe({
 })
 
 observe({
-  min_date<-min(logger_data()$timestamp)
-  max_date<-max(logger_data()$timestamp)
+  validate(
+    need(logger_data(), "Please provide file with antennae specifications.")
+  )
+  min_date<-min(logger_data()$timestamp)-1
+  max_date<-max(logger_data()$timestamp)+1
   updateSliderInput(session, "slider_datetime",min=min_date,max=max_date,value = c(min_date,max_date) )
 })
 
@@ -73,7 +76,11 @@ filtered_data <- reactive({
     tempo<-subset(tempo,tempo$freq_tag==input$choose_tag)
   }
   if(input$activate_single_data){
-    tempo <- tempo[order(tempo$timestamp),]
+    print(str(tempo))
+    if(!is.null(tempo)){
+      tempo <- tempo[order(tempo$timestamp),]
+    }
+
   }
   validate(
     need(nrow(tempo)[1]>0, "Oh no, there is no data to plot! Did you filter it all out?")
@@ -98,7 +105,7 @@ output$facet <- renderPlot({
 output$histo <- renderPlot({
   if(is.null(filtered_data()))
     return(NULL)
-  ggplot(filtered_data()) + geom_histogram(aes(freq),bins=200)
+  ggplot(filtered_data()) + geom_histogram(aes(freq),bins=200)+ scale_y_log10()
 })
 
 output$histo_length <- renderPlot({

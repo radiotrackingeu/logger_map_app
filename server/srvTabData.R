@@ -6,14 +6,13 @@ logger_data<- reactive({
   if (is.null(inFile))
     return(NULL)
   switch (input$data_type_input, 
-          CSV={ data <- read_logger_data(inFile$datapath)},
+          CSV={ 
+            data <- read_logger_data(inFile$datapath)
+            data$receiver <- "not_specified"
+          },
           SQL={   # open db
             con <- dbConnect(RSQLite::SQLite(),inFile$datapath)
-            data<-NULL
-            for(t in dbListTables(con)) {
-              print(t)
-              data <- rbind(data,cbind(dbReadTable(con,t),receiver=t))
-            }
+            data <- dbReadTable(con,"rteu_logger_data")
             data$timestamp<-as.POSIXct(data$time, "%Y-%m-%d %H:%M:%S", tz="UTC")
             dbDisconnect(con)
             })
@@ -31,3 +30,5 @@ antennae_data <- reactive({
   if(is.null(input$data_position_input)) return(NULL)
   read.csv2(input$data_position_input$datapath, dec=".", stringsAsFactors = FALSE, row.names = NULL)
 })
+
+
