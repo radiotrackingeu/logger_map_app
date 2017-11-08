@@ -31,4 +31,23 @@ antennae_data <- reactive({
   read.csv2(input$data_position_input$datapath, dec=".", stringsAsFactors = FALSE, row.names = NULL)
 })
 
+output$data_tab_logger_table<-renderDataTable({
+  validate(
+    need(logger_data(), "Please provide logger data file.")
+  )
+  logger_data()
+}, options=list(pageLength=10))
 
+output$data_tab_freq_table<-renderDataTable({
+  validate(
+    need(freqs(), "Please provide antennae data file.")
+  )
+  freqs()
+}, options=list(pageLength=10))
+
+output$data_tab_antennae_table<-renderDataTable({
+  validate(
+    need(antennae_data(), "Please provide frequencies data file.")
+  )
+  antennae_data()
+}, options=list(pageLength=10))

@@ -6,7 +6,7 @@ tabPanel("Map",
                                div.outer {
                                
                                position: fixed;
-                               top: 41px;
+                               top: 51px;
                                left: 0;
                                right: 0;
                                bottom: 0;
@@ -39,8 +39,10 @@ tabPanel("Map",
                        draggable = TRUE, top = 60, left = "auto", right = 20, bottom = "auto",
                        width = 330, height = "auto",
                        selectInput("choose_tag", "Choose Tag", choices = NULL),
-                       checkboxInput("activate_single_data","Activate",value = FALSE),
-                       sliderInput("choose_single_data_set","Data Steps", min=1, max =500,value = 1, animate = TRUE),
+                       checkboxInput("show_antennae_outline", "Show antennae outlines", value=TRUE),
+                       checkboxInput("activate_single_data","Show Timeline",value = FALSE),
+                       conditionalPanel(condition="input.activate_single_data==true",
+                       sliderInput("choose_single_data_set","Data Steps", min=1, max =500,value = 1, animate = TRUE)),
                        htmlOutput("singal_select_prop")
          )
     )
