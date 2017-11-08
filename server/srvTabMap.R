@@ -33,13 +33,26 @@ observeEvent(input$show_antennae_outline, {
   updateActionButton(session,"dl","Foo")
 })
 
+color_palette <- reactive({
+  mean_strength<-mean(filtered_data()$strength)
+  print(mean_strength)
+  std_strength<-sd(filtered_data()$strength)
+  print(std_strength)
+  range_strength<-abs(c(mean_strength-1.2*std_strength,mean_strength+1.2*std_strength))
+  pal <- colorNumeric(
+    palette = "Blues",
+    domain = range_strength,
+    reverse =TRUE)
+  pal
+})
+
 observe({
   validate(
     need(antennae_data(), "Please provide file with antennae specifications.")#,
-    # need(filtered_data(), "Please provide file with antennae specifications.")
   )
-  #logger_map
-  data<-filtered_data()
+  validate(
+    need(logger_data(), "Please have a look at the filter settings.")#,
+  )
   
   leafletProxy("logger_map") %>% clearGroup("bats") %>% clearPopups() %>% clearMarkers() %>% addCircles(lng=antennae_data()$Long,lat = antennae_data()$Lat)
   if(input$activate_single_data){
@@ -53,25 +66,17 @@ observe({
       len<-100*meta$Gain
       wgs<-kegelcreation(x,y,direction,len,bw) # Many warnings...
       label_kegel <- paste0("Signal Properties:",br(),
-                                "Receiver: ",data$receiver[p], br(),
-                                "Date and Time: ", data$time[p],br(),
-                                "Strength: ", data$strength[p],br(),
-                                "Length: ", data$duration[p],br(),
-                                "Bandwidth: ", data$bw[p],br(),
-                                "Frequency: ",data$freq[p]
+                            "Receiver: ",data$receiver[p], br(),
+                            "Date and Time: ", data$time[p],br(),
+                            "Strength: ", data$strength[p],br(),
+                            "Length: ", data$duration[p],br(),
+                            "Bandwidth: ", data$bw[p],br(),
+                            "Frequency: ",data$freq[p]
                             )
-      leafletProxy("logger_map") %>% addPolygons(lng=c(wgs$X,x),lat=c(wgs$Y,y),fillOpacity=0.4,stroke=FALSE,popup=label_kegel, group="bats")
-      # leafletProxy("logger_map") %>% addPolygons(lng=c(wgs$X,x),lat=c(wgs$Y,y),fillOpacity=0.0, opacity = 1.0, color="#ff0000",stroke=FALSE)
+      leafletProxy("logger_map") %>% addPolygons(lng=c(wgs$X,x),lat=c(wgs$Y,y),fillColor = color_palette()(abs(data$strength[p])),fillOpacity=0.4,stroke=FALSE,popup=label_kegel, group="bats")
       }
     }
 })
-
-# output$map_all_antenna <- renderLeaflet({
-#   validate(
-#     need(antennae_data(), "Please provide file with antennae specifications.")
-#   )
-#   create_antenna_map(antennae_data())
-#   })
 
 output$logger_map <- renderLeaflet({
   validate(
@@ -79,11 +84,9 @@ output$logger_map <- renderLeaflet({
   )
   map<-leaflet() %>% addTiles() %>% addCircles( lng=antennae_data()$Long,lat = antennae_data()$Lat)
   for(name in names(antennae_cones())) {
-    # print(antennae_cones()[[name]]$x)
    map<-map %>% addPolygons(group="antennae_outline", lng=antennae_cones()[[name]]$x, lat=antennae_cones()[[name]]$y, fill=FALSE, opacity=0.5, stroke=TRUE, weight=1)
   }
   map
-  #create_logger_map(filtered_data(),antennae_data(),input$activate_single_data)
 })
 
 output$singal_select_prop<-renderText(

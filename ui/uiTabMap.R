@@ -42,7 +42,7 @@ tabPanel("Map",
                        checkboxInput("show_antennae_outline", "Show antennae outlines", value=TRUE),
                        checkboxInput("activate_single_data","Show Timeline",value = FALSE),
                        conditionalPanel(condition="input.activate_single_data==true",
-                       sliderInput("choose_single_data_set","Data Steps", min=1, max =500,value = 1, animate = TRUE)),
+                       sliderInput("choose_single_data_set","Data Steps", min=1, max =500,value = 1, animate = TRUE, step = 1)),
                        htmlOutput("singal_select_prop")
          )
     )

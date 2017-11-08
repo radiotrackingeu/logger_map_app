@@ -17,10 +17,9 @@ output$dl <-downloadHandler(
   content = function(file) {
     value<-switch(input$navbar,
            "Filter" = ggsave(file),
-    "Map"  = mapshot(map,"C:/file.pdf", TRUE )
+           "Map"  = mapshot(map,file, TRUE )
            )
     return(value)
-    # mapshot(map$dat, file=file)
     
   },
   contentType = "application/pdf"
