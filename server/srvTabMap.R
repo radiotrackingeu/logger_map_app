@@ -5,7 +5,7 @@ output$logger_map <- renderLeaflet({
   validate(
     need(antennae_data(), "Please provide file with antennae specifications.")
   )
-  map() %>% addAntennaePositions() %>% addAntennaeCones()
+  map() %>% addAntennaePositions() %>% addAntennaeCones() %>% addLegend(position="topleft",pal=color_palette(),values=filtered_data()$strength)
 })
 
 # render data info text 
@@ -15,24 +15,25 @@ output$singal_select_prop<-renderText(
   }
 )
 
+output$miniplot<-renderPlot({
+  if(input$activate_single_data){
+    ggplot(filtered_data())+geom_point(aes(timestamp,strength),color="blue")+geom_point(aes(timestamp[input$choose_single_data_set],strength[input$choose_single_data_set]),color="red")
+  }
+})
+
 
 observeEvent(input$show_antennae_outline, {
-  if (isTRUE(input$show_antennae_outline))
+  if(input$show_antennae_outline)
     leafletProxy("logger_map") %>% showGroup("antennae_cones")
   else 
     leafletProxy("logger_map") %>% hideGroup("antennae_cones")
 })
 
 color_palette <- reactive({
-  mean_strength<-mean(filtered_data()$strength)
-  print(mean_strength)
-  std_strength<-sd(filtered_data()$strength)
-  print(std_strength)
-  range_strength<-abs(c(mean_strength-1.2*std_strength,mean_strength+1.2*std_strength))
   pal <- colorNumeric(
-    palette = "Blues",
-    domain = range_strength,
-    reverse =TRUE)
+    palette = "Reds",
+    domain = filtered_data()$strength,
+    reverse =FALSE)
   pal
 })
 
@@ -47,28 +48,7 @@ observe({
   leafletProxy("logger_map") %>% clearGroup("bats") %>% clearPopups() %>% clearMarkers()
   if(input$activate_single_data){
     leafletProxy("logger_map") %>% addDetectionCones()
-    # data<-subset(filtered_data(),timestamp==timestamp[input$choose_single_data_set])
-    # for(p in 1:nrow(data)){
-    #   a<-antennae_cones()[[data$receiver[p]]]
-    #   # 
-    #   # meta <-subset(antennae_data(),Receiver==data$receiver[p])
-    #   # x<-meta$Long
-    #   # y<-meta$Lat
-    #   # direction<-meta$Direction
-    #   # bw<-meta$Beamwidth
-    #   # len<-100*meta$Gain
-    #   # wgs<-kegelcreation(x,y,direction,len,bw) # Many warnings...
-    #   label_kegel <- paste0("Signal Properties:",br(),
-    #                         "Receiver: ",data$receiver[p], br(),
-    #                         "Date and Time: ", data$time[p],br(),
-    #                         "Strength: ", data$strength[p],br(),
-    #                         "Length: ", data$duration[p],br(),
-    #                         "Bandwidth: ", data$bw[p],br(),
-    #                         "Frequency: ",data$freq[p]
-    #                         )
-    #   leafletProxy("logger_map") %>% addPolygons(lng=a$x,lat=a$y,fillColor = color_palette()(abs(data$strength[p])),fillOpacity=0.4,stroke=FALSE,popup=label_kegel, group="bats")
-    #   }
-    }
+  }
 })
 
 # creates basic map
@@ -91,6 +71,9 @@ addAntennaeCones<- function(m) {
 
 addDetectionCones<-function(m) {
   data<-subset(filtered_data(),timestamp==timestamp[input$choose_single_data_set])
+  validate(
+    need(data, "Please have a look at the filter settings.")
+  )
   for(p in 1:nrow(data)){
     a<-antennae_cones()[[data$receiver[p]]]
     label_kegel <- paste0("Signal Properties:",br(),
@@ -101,7 +84,7 @@ addDetectionCones<-function(m) {
                           "Bandwidth: ", data$bw[p],br(),
                           "Frequency: ",data$freq[p]
     )
-    m<-m %>% addPolygons(lng=a$x,lat=a$y,fillColor = color_palette()(abs(data$strength[p])),fillOpacity=0.7,stroke=FALSE,popup=label_kegel, group="bats")
+    m<-m %>% addPolygons(lng=a$x,lat=a$y,fillColor = color_palette()(data$strength[p]),fillOpacity=0.8,stroke=FALSE,popup=label_kegel, group="bats")
   }
   return(m)
 }
