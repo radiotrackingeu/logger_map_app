@@ -1,36 +1,26 @@
 ############ srvTabMap.R ############
 
-#global variable for leaflet ma
-map <- NULL
-
-antennae_cones<-reactive({
-  if (is.null(antennae_data())) return(NULL)
-  cones=NULL
-  
-  for(a in 1:nrow(antennae_data())){
-    antennae<-antennae_data()[a,]
-    x<-antennae$Long
-    y<-antennae$Lat
-    direction<-antennae$Direction
-    bw<-antennae$Beamwidth
-    len<-100*antennae$Gain
-    wgs<-kegelcreation(x,y,direction,len,bw) # Many warnings...
-    label_kegel <- ""
-    cones[[antennae$Receiver]]<-list(x=c(wgs$X,x), y=c(wgs$Y,y), label=label_kegel)
-    # cones<-list(cones, list(c(wgs$X,x), c(wgs$y,y), label_kegel))
-  # leafletProxy("logger_map") %>% addPolygons(lng=c(wgs$X,x),lat=c(wgs$Y,y),fillOpacity=0.0, opacity = 1.0, color="#ff0000",stroke=FALSE)
-  }
-  cones
+# render map
+output$logger_map <- renderLeaflet({
+  validate(
+    need(antennae_data(), "Please provide file with antennae specifications.")
+  )
+  map() %>% addAntennaePositions() %>% addAntennaeCones()
 })
 
+# render data info text 
+output$singal_select_prop<-renderText(
+  if(input$activate_single_data){
+    paste0("Date and Time: ", filtered_data()$timestamp[input$choose_single_data_set])
+  }
+)
+
+
 observeEvent(input$show_antennae_outline, {
-  if (isTRUE(input$show_antennae_outline))   
-    for(name in names(antennae_cones())) {
-    # print(antennae_cones()[[name]]$x)
-    leafletProxy("logger_map") %>% addPolygons(group="antennae_outline", lng=antennae_cones()[[name]]$x, lat=antennae_cones()[[name]]$y, fill=FALSE, opacity=0.5, stroke=TRUE, weight=1)
-    }
-  else {leafletProxy("logger_map") %>% clearGroup("antennae_outline")}
-  updateActionButton(session,"dl","Foo")
+  if (isTRUE(input$show_antennae_outline))
+    leafletProxy("logger_map") %>% showGroup("antennae_cones")
+  else 
+    leafletProxy("logger_map") %>% hideGroup("antennae_cones")
 })
 
 color_palette <- reactive({
@@ -53,47 +43,87 @@ observe({
   validate(
     need(logger_data(), "Please have a look at the filter settings.")#,
   )
-  
-  leafletProxy("logger_map") %>% clearGroup("bats") %>% clearPopups() %>% clearMarkers() %>% addCircles(lng=antennae_data()$Long,lat = antennae_data()$Lat)
+
+  leafletProxy("logger_map") %>% clearGroup("bats") %>% clearPopups() %>% clearMarkers()
   if(input$activate_single_data){
-    data<-subset(filtered_data(),timestamp==timestamp[input$choose_single_data_set])
-    for(p in 1:nrow(data)){
-      meta <-subset(antennae_data(),Receiver==data$receiver[p])
-      x<-meta$Long
-      y<-meta$Lat
-      direction<-meta$Direction
-      bw<-meta$Beamwidth
-      len<-100*meta$Gain
-      wgs<-kegelcreation(x,y,direction,len,bw) # Many warnings...
-      label_kegel <- paste0("Signal Properties:",br(),
-                            "Receiver: ",data$receiver[p], br(),
-                            "Date and Time: ", data$time[p],br(),
-                            "Strength: ", data$strength[p],br(),
-                            "Length: ", data$duration[p],br(),
-                            "Bandwidth: ", data$bw[p],br(),
-                            "Frequency: ",data$freq[p]
-                            )
-      leafletProxy("logger_map") %>% addPolygons(lng=c(wgs$X,x),lat=c(wgs$Y,y),fillColor = color_palette()(abs(data$strength[p])),fillOpacity=0.4,stroke=FALSE,popup=label_kegel, group="bats")
-      }
+    leafletProxy("logger_map") %>% addDetectionCones()
+    # data<-subset(filtered_data(),timestamp==timestamp[input$choose_single_data_set])
+    # for(p in 1:nrow(data)){
+    #   a<-antennae_cones()[[data$receiver[p]]]
+    #   # 
+    #   # meta <-subset(antennae_data(),Receiver==data$receiver[p])
+    #   # x<-meta$Long
+    #   # y<-meta$Lat
+    #   # direction<-meta$Direction
+    #   # bw<-meta$Beamwidth
+    #   # len<-100*meta$Gain
+    #   # wgs<-kegelcreation(x,y,direction,len,bw) # Many warnings...
+    #   label_kegel <- paste0("Signal Properties:",br(),
+    #                         "Receiver: ",data$receiver[p], br(),
+    #                         "Date and Time: ", data$time[p],br(),
+    #                         "Strength: ", data$strength[p],br(),
+    #                         "Length: ", data$duration[p],br(),
+    #                         "Bandwidth: ", data$bw[p],br(),
+    #                         "Frequency: ",data$freq[p]
+    #                         )
+    #   leafletProxy("logger_map") %>% addPolygons(lng=a$x,lat=a$y,fillColor = color_palette()(abs(data$strength[p])),fillOpacity=0.4,stroke=FALSE,popup=label_kegel, group="bats")
+    #   }
     }
 })
 
-output$logger_map <- renderLeaflet({
-  validate(
-    need(antennae_data(), "Please provide file with antennae specifications.")
-  )
-  map<-leaflet() %>% addTiles() %>% addCircles( lng=antennae_data()$Long,lat = antennae_data()$Lat)
-  for(name in names(antennae_cones())) {
-   map<-map %>% addPolygons(group="antennae_outline", lng=antennae_cones()[[name]]$x, lat=antennae_cones()[[name]]$y, fill=FALSE, opacity=0.5, stroke=TRUE, weight=1)
-  }
-  map
+# creates basic map
+map <- reactive({
+  leaflet() %>% addProviderTiles(providers$OpenStreetMap)
 })
 
-output$singal_select_prop<-renderText(
-  if(input$activate_single_data){
-    paste0("Date and Time: ", filtered_data()$timestamp[input$choose_single_data_set])
+# adds circles at antennae positions on given map.
+addAntennaePositions<-function(m) {
+  m %>% addCircles(group="antennae_positions", lng=antennae_data()$Long,lat = antennae_data()$Lat)
+}
+
+# adds the cone outline to antennae on given map.
+addAntennaeCones<- function(m) {
+  for(name in names(antennae_cones())) {
+   m<-m %>% addPolygons(group="antennae_cones", lng=antennae_cones()[[name]]$x, lat=antennae_cones()[[name]]$y, fill=FALSE, opacity=0.5, stroke=TRUE, weight=1)
   }
-)
+  return(m)
+}
+
+addDetectionCones<-function(m) {
+  data<-subset(filtered_data(),timestamp==timestamp[input$choose_single_data_set])
+  for(p in 1:nrow(data)){
+    a<-antennae_cones()[[data$receiver[p]]]
+    label_kegel <- paste0("Signal Properties:",br(),
+                          "Receiver: ",data$receiver[p], br(),
+                          "Date and Time: ", data$time[p],br(),
+                          "Strength: ", data$strength[p],br(),
+                          "Length: ", data$duration[p],br(),
+                          "Bandwidth: ", data$bw[p],br(),
+                          "Frequency: ",data$freq[p]
+    )
+    m<-m %>% addPolygons(lng=a$x,lat=a$y,fillColor = color_palette()(abs(data$strength[p])),fillOpacity=0.7,stroke=FALSE,popup=label_kegel, group="bats")
+  }
+  return(m)
+}
+
+
+# calculates cone shapes
+antennae_cones<-reactive({
+  cones=NULL
+  if (!is.null(antennae_data())) {
+    for(a in 1:nrow(antennae_data())){
+      antennae<-antennae_data()[a,]
+      x<-antennae$Long
+      y<-antennae$Lat
+      direction<-antennae$Direction
+      bw<-antennae$Beamwidth
+      len<-100*antennae$Gain
+      wgs<-kegelcreation(x,y,direction,len,bw) # Many warnings...
+      cones[[antennae$Receiver]]<-list(x=c(wgs$X,x), y=c(wgs$Y,y))
+    }
+  }
+  cones
+})
 
 # calculates corner coordinates of antenna reception area
 kegelcreation<-function(x,y,dir,length,deg){

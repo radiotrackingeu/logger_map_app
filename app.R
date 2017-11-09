@@ -4,7 +4,8 @@ required_packages<-c("shiny",
                      "rgdal",
                      "DBI",
                      "RSQLite",
-                     "mapview")
+                     "mapview",
+                     "htmlwidgets")
 
 install_and_load_packages <- function(x){
   for( i in x ){
@@ -42,7 +43,7 @@ ui <- tagList(
     $("#dl").attr("disabled", "true").attr("onclick", "return false;");
 
     Shiny.addCustomMessageHandler("changeTab", function(newTab) {
-    $("#dl").removeAttr("disabled).removeAttr("onclick").html(
+    $("#dl").removeAttr("disabled").removeAttr("onclick").html(
     "<i class=\\"fa fa-download\\"></i> Download" + newTab.pic );
     });
     })
