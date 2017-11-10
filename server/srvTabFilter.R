@@ -20,7 +20,7 @@ observe({
 })
 
 observe({
-  updateSliderInput(session, "choose_single_data_set",min=1,max=nrow(filtered_data()))
+  updateSliderInput(session, "choose_single_data_set",min=1,max=nrow(filtered_data()), value = 1)
 })
 
 output$single_freq_num_input <- renderUI(
@@ -76,7 +76,6 @@ filtered_data <- reactive({
     tempo<-subset(tempo,tempo$freq_tag==input$choose_tag)
   }
   if(input$activate_single_data){
-    print(str(tempo))
     if(!is.null(tempo)){
       tempo <- tempo[order(tempo$timestamp),]
     }

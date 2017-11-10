@@ -71,6 +71,7 @@ addAntennaeCones<- function(m) {
 
 addDetectionCones<-function(m) {
   data<-subset(filtered_data(),timestamp==timestamp[input$choose_single_data_set])
+  if(nrow(data)==0) return(NULL)
   validate(
     need(data, "Please have a look at the filter settings.")
   )
