@@ -25,7 +25,7 @@ logger_data<- reactive({
 })
 
 freqs <- reactive({
-  if(!is.null(input$data_logger_input)){
+  if(!is.null(input$data_logger_input)&&is.null(input$freq_file)){
     con <- dbConnect(RSQLite::SQLite(),input$data_logger_input$datapath)
     if(dbExistsTable(con,"rteu_freqs")){
       data <- dbReadTable(con,"rteu_freqs")
@@ -42,7 +42,7 @@ freqs <- reactive({
 
 # read project meta file: locations
 antennae_data <- reactive({
-  if(!is.null(input$data_logger_input)){
+  if(!is.null(input$data_logger_input)&&is.null(input$data_position_input)){
     con <- dbConnect(RSQLite::SQLite(),input$data_logger_input$datapath)
     if(dbExistsTable(con,"rteu_antenna")){
       data <- dbReadTable(con,"rteu_antenna")
