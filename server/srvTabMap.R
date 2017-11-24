@@ -1,5 +1,15 @@
 ############ srvTabMap.R ############
 
+observe({
+  if (!(is.null(logger_data()) ||
+        is.null(antennae_data()) || 
+        is.null(freqs())
+  ))
+    js$enableTab("Map")
+  else
+    js$disableTab("Map")
+})
+
 # render map
 output$logger_map <- renderLeaflet({
   validate(
@@ -39,10 +49,8 @@ color_palette <- reactive({
 
 observe({
   validate(
-    need(antennae_data(), "Please provide file with antennae specifications.")#,
-  )
-  validate(
-    need(logger_data(), "Please have a look at the filter settings.")#,
+    need(antennae_data(), "Please provide file with antennae specifications."),
+    need(logger_data(), "Please have a look at the filter settings.")
   )
 
   leafletProxy("logger_map") %>% clearGroup("bats") %>% clearPopups() %>% clearMarkers()
@@ -76,6 +84,10 @@ addDetectionCones<-function(m) {
     need(data, "Please have a look at the filter settings.")
   )
   for(p in 1:nrow(data)){
+    if (!(data$receiver[p]%in%antennae_data()[,1])) {
+      # print(paste0("antenna '",data$receiver[p],"' not defined in ",input$data_position_input$name ))
+      next
+    }
     a<-antennae_cones()[[data$receiver[p]]]
     label_kegel <- paste0("Signal Properties:",br(),
                           "Receiver: ",data$receiver[p], br(),

@@ -1,10 +1,14 @@
-observe({
+shinyjs::disable("dl")
+
+observeEvent(input$navbar,{
   value<-switch(input$navbar,
                 "Input" = "",
                 "Filter" = " Graph",
                 "Map" = " Map"
   )
-  session$sendCustomMessage("changeTab", list(pic=value))
+  shinyjs::html("dl", sprintf("<i class='fa fa-download'> </i> Download%s",value))
+  if (value=="") shinyjs::disable("dl")
+  else shinyjs::enable("dl")
 })
 
 output$dl <-downloadHandler(

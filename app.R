@@ -5,7 +5,8 @@ required_packages<-c("shiny",
                      "DBI",
                      "RSQLite",
                      "mapview",
-                     "htmlwidgets")
+                     "htmlwidgets",
+                     "shinyjs")
 
 install_and_load_packages <- function(x){
   for( i in x ){
@@ -30,26 +31,42 @@ navbarPageWithInputs <- function(..., inputs) {
   navbar
 }
 
+jscode <- "
+shinyjs.disableTab = function(name) {
+var tab = $('.nav li a[data-value=' + name + ']');
+tab.bind('click.tab', function(e) {
+e.preventDefault();
+return false;
+});
+tab.addClass('disabled');
+}
+
+shinyjs.enableTab = function(name) {
+var tab = $('.nav li a[data-value=' + name + ']');
+tab.unbind('click.tab');
+tab.removeClass('disabled');
+}
+
+shinyjs.disableButton = function(name) {
+var btn = $()
+}
+"
+
+css <- "
+.nav li a.disabled {
+background-color: #f8f8f8 !important;
+color: #999 !important;
+cursor: not-allowed !important;
+border-color: #f8f8f8 !important;
+}"
+
 
 install_and_load_packages(required_packages)
 
 ui <- tagList(
-  tags$head(HTML(
-    '
-    <script type="text/javascript">
-    //taken from https://stackoverflow.com/questions/25247852/shiny-app-disable-downloadbutton
-    $(document).ready(function() {
-    // disable download at startup. data_file is the id of the downloadButton
-    $("#dl").attr("disabled", "true").attr("onclick", "return false;");
-
-    Shiny.addCustomMessageHandler("changeTab", function(newTab) {
-    $("#dl").removeAttr("disabled").removeAttr("onclick").html(
-    "<i class=\\"fa fa-download\\"></i> Download" + newTab.pic );
-    });
-    })
-    </script>
-    '
-  )),
+  useShinyjs(),
+  extendShinyjs(text=jscode),
+  inlineCSS(css),
   navbarPageWithInputs(id="navbar", "LoggerMapApp",
   source(file.path("ui", "uiTabData.R"),local=TRUE)$value,
   #source(file.path("ui", "uiTabDB.R"),local=TRUE)$value,

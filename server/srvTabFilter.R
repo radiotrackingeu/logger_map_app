@@ -1,7 +1,20 @@
 ############ srvTabGraph.R ############
 
+observe({
+  if (!(is.null(logger_data()) ||
+        is.null(antennae_data()) || 
+        is.null(freqs())
+      ))
+    js$enableTab("Filter")
+  else
+    js$disableTab("Filter")
+})
+
 # Change upon data input
 observe({
+  validate(
+    need(logger_data(), "Please provide file with antennae specifications.")
+  )
   rec_names <- c("all",as.character(unique(logger_data()$receiver)))
   updateSelectInput(session, "input_select_receiver", label = "Select Receiver", choices = rec_names, selected = "all")
 })
@@ -16,6 +29,9 @@ observe({
 })
 
 observe({
+  validate(
+    need(freqs(), "Please provide frequency information in data tab.")
+  )
   updateSelectInput(session, "choose_tag", label = "Select Tag", choices = c("all",freqs()[["label"]]))
 })
 
