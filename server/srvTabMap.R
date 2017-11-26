@@ -25,10 +25,17 @@ output$singal_select_prop<-renderText(
   }
 )
 
+miniplot_base<-reactive({
+  if(input$activate_single_data){
+    ggplot(filtered_data())+geom_point(aes(timestamp,strength),color="blue")
+  }
+})
+
 output$miniplot<-renderPlot({
   if(input$activate_single_data){
-    ggplot(filtered_data())+geom_point(aes(timestamp,strength),color="blue")+geom_point(aes(timestamp[input$choose_single_data_set],strength[input$choose_single_data_set]),color="red")
-  }
+    #ggplot(filtered_data())+geom_point(aes(timestamp,strength),color="blue")+geom_point(aes(timestamp[input$choose_single_data_set],strength[input$choose_single_data_set]),color="red")
+    miniplot_base() + geom_point(aes(timestamp[input$choose_single_data_set],strength[input$choose_single_data_set]),color="red")
+    }
 })
 
 
