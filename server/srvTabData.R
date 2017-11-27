@@ -62,7 +62,8 @@ logger_data <- reactive({
             }
             data <- dbReadTable(con, "rteu_logger_data")
             data$timestamp <-
-              as.POSIXct(data$time, "%Y-%m-%d %H:%M:%S", tz = "UTC")
+              #as.POSIXct(data$time, "%Y-%m-%d %H:%M:%S", tz = "UTC")
+              as.POSIXct(data$time, tz = "UTC")
             dbDisconnect(con)
           })
   data

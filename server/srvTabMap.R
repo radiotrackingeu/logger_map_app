@@ -15,8 +15,10 @@ output$logger_map <- renderLeaflet({
   validate(
     need(antennae_data(), "Please provide file with antennae specifications.")
   )
-  map() %>% addAntennaePositions() %>% addAntennaeCones() %>% addLegend(position="topleft",pal=color_palette(),values=filtered_data()$strength)
+  map() %>% addAntennaePositions() %>% addAntennaeCones() %>% addLegend(position="topleft",pal=color_palette(),values=filtered_data()$strength,title="dB",transform= function(x) rev(x))
 })
+
+
 
 # render data info text 
 output$singal_select_prop<-renderText(

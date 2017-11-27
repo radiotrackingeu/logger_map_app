@@ -3,6 +3,42 @@ filter_data_length <- function(data,pulse_length){
   return(subset(data, (data$duration>(pulse_length[1])) & (data$duration<(pulse_length[2]))))
 }
 
+filter_data_time_distance <- function(data,time_distance){
+  #find for each receiver
+  list_of_receivers<-unique(data$receiver)
+  #and each frequency
+  list_of_frequencies<-unique(data$freq_tag)
+  #signals which appear betweeen time_distance[1] and time_distance[2] seconds
+  return_tmp<-NULL
+  for(i in list_of_receivers){
+    tmp1 <- subset(data,receiver==i)
+    for(k in list_of_frequencies){
+      tmp2<-subset(tmp1,freq_tag==k)
+      tmp2<-tmp2[order(tmp2$timestamp),]
+      #calcualte the time distance between the impulses
+      if(nrow(tmp2)>1){
+        td<-diff(tmp2$timestamp)
+        if(attr(td,"units")=="secs"){
+          td<-c(td,td[length(td)])
+          tmp2<-cbind(tmp2,td=td)
+          test<-tmp2$td>time_distance[1]&tmp2$td<time_distance[2]
+          i<-1
+          while(i<length(test)-1){
+            if(!test[i+1]&&test[i]){
+              test[i+1]<-TRUE
+              i<-i+1
+            }
+            i<-i+1
+          }
+          tmp2<-tmp2[test,]
+          return_tmp<-rbind(tmp2,return_tmp)
+        }
+      }
+    }
+  }
+  return(return_tmp)
+}
+
 filter_signal_bandwidth <- function(data,pulse_bandwidth){
   return(subset(data, (data$bw>(pulse_bandwidth[1])) & (data$bw<(pulse_bandwidth[2]))))
 }
@@ -27,7 +63,5 @@ filter_data_freq <- function(data,freq,freq_error,mid_freq,freq_labels = NULL){
       freq_sorted<-rbind.data.frame(freq_sorted, tmp)
     }
   }
-  
-  #freq_name<-paste0(as.character((freq)/1000),"MHz")
   return(freq_sorted)
 }

@@ -85,6 +85,9 @@ filtered_data <- reactive({
   if(input$filter_bw){
     tempo<-filter_signal_bandwidth(tempo,input$signal_bw)
   }
+  if(input$filter_distance){
+    tempo<-filter_data_time_distance(tempo,input$signal_distance)
+  }
   if(input$filter_freq&&input$filter_one_freq){
     return(NULL)
   }
