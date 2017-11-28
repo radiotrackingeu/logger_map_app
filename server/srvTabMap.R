@@ -15,7 +15,13 @@ output$logger_map <- renderLeaflet({
   validate(
     need(antennae_data(), "Please provide file with antennae specifications.")
   )
-  map() %>% addAntennaePositions() %>% addAntennaeCones() %>% addLegend(position="topleft",pal=color_palette(),values=filtered_data()$strength,title="dB")
+  map() %>% addAntennaePositions() %>% 
+    addAntennaeCones() %>% 
+    addLegend(position="topleft",   
+              pal=color_palette(),
+              values=filtered_data()$strength,
+              title="dB"
+              )
 })
 
 
@@ -52,7 +58,7 @@ color_palette <- reactive({
   pal <- colorNumeric(
     palette = "Reds",
     domain = filtered_data()$strength,
-    reverse =FALSE)
+    reverse = FALSE)
   pal
 })
 
@@ -70,7 +76,7 @@ observe({
 
 # creates basic map
 map <- reactive({
-  leaflet() %>% addProviderTiles(providers$OpenStreetMap)
+  leaflet() %>% addProviderTiles(providers[[input$choose_map]])
 })
 
 # adds circles at antennae positions on given map.
