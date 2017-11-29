@@ -3,7 +3,7 @@ filter_data_length <- function(data,pulse_length){
   return(subset(data, (data$duration>(pulse_length[1])) & (data$duration<(pulse_length[2]))))
 }
 
-filter_data_time_distance <- function(data,time_distance){
+filter_data_time_interval <- function(data,time_distance){
   #find for each receiver
   list_of_receivers<-unique(data$receiver)
   #and each frequency
