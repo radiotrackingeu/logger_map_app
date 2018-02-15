@@ -1,9 +1,9 @@
 ############ srvTabGraph.R ############
 
 observe({
-  if (!(is.null(logger_data()) ||
-        is.null(antennae_data()) || 
-        is.null(freqs())
+  if (!(is.null(logger_data()) #||
+        #is.null(antennae_data()) #|| 
+        #is.null(freqs())
       ))
     js$enableTab("Filter")
   else
@@ -62,14 +62,13 @@ filtered_data <- reactive({
   if (is.null(logger_data()))
     return(NULL)
   tempo<-logger_data()
-  
   #filter receivers
   if(!any(input$input_select_receiver=="all")){
     tempo<-subset(tempo,tempo$receiver==input$input_select_receiver)
   }
   #filter date/time
   tempo<-subset(tempo, (tempo$timestamp>=input$slider_datetime[1])&(tempo$timestamp<=input$slider_datetime[2]) )
-  
+
   if(input$filter_length){
     tempo<-filter_data_length(tempo,input$signal_length)
   }
@@ -91,7 +90,9 @@ filtered_data <- reactive({
   if(input$filter_freq&&input$filter_one_freq){
     return(NULL)
   }
-  if(input$choose_tag!="all"){
+  if(input$choose_tag!="all"&& !is.null(input$choose_tag) && input$choose_tag!=""){
+    print(input$choose_tag)
+    print(is.null(input$choose_tag))
     tempo<-subset(tempo,tempo$freq_tag==input$choose_tag)
   }
   if(input$activate_single_data){

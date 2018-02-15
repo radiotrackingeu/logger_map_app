@@ -4,16 +4,9 @@ tabPanel("Input",
            sidebarPanel(
              radioButtons(
                "data_type_input",
-               choices = c("SQL", "CSV"),
+               choices = c("SQLite", "CSV","MySQL"),
                label = "Please select input type",
-               selected = "SQL"
-             ),
-             fileInput(
-               "data_logger_input",
-               "Upload Logger Data",
-               multiple = FALSE,
-               accept = NULL,
-               width = NULL
+               selected = "SQLite"
              ),
              uiOutput('data_tab_additional')
            ),

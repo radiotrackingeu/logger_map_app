@@ -6,7 +6,9 @@ required_packages<-c("shiny",
                      "RSQLite",
                      "mapview",
                      "htmlwidgets",
-                     "shinyjs")
+                     "shinyjs",
+                     "RMySQL",
+                     "pool")
 
 install_and_load_packages <- function(x){
   for( i in x ){
@@ -68,12 +70,11 @@ ui <- tagList(
   extendShinyjs(text=jscode),
   inlineCSS(css),
   navbarPageWithInputs(id="navbar", "LoggerMapApp",
-  source(file.path("ui", "uiTabData.R"),local=TRUE)$value,
-  #source(file.path("ui", "uiTabDB.R"),local=TRUE)$value,
-  source(file.path("ui", "uiTabFilter.R"),local=TRUE)$value,
-  source(file.path("ui", "uiTabMap.R"),local=TRUE)$value,
-  inputs=downloadButton("dl", label = "Download")
-)
+    source(file.path("ui", "uiTabData.R"),local=TRUE)$value,
+    source(file.path("ui", "uiTabFilter.R"),local=TRUE)$value,
+    source(file.path("ui", "uiTabMap.R"),local=TRUE)$value,
+    inputs=downloadButton("dl", label = "Download")
+  )
 )
 
 server <- function(input, output, session) {
@@ -81,7 +82,6 @@ server <- function(input, output, session) {
   source(file.path("server", "srvDBIO.R"),local=TRUE)$value
   source(file.path("server", "srvFilters.R"),local=TRUE)$value
   source(file.path("server", "srvTabData.R"),local=TRUE)$value
-  #source(file.path("server", "srvTabDB.R"),local=TRUE)$value
   source(file.path("server", "srvTabFilter.R"),local=TRUE)$value
   source(file.path("server", "srvTabMap.R"),local=TRUE)$value
   source(file.path("server", "srvDownload.R"), local=TRUE)$value
