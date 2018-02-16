@@ -52,6 +52,11 @@ additional_input_fields <- reactive({
     "Live Data",
     FALSE
   )
+  MySQL_input_live_filter <- checkboxInput(
+    "update_auto_filter", 
+    "Live Data Filter",
+    FALSE
+  )
   
   
   if (input$data_type_input == 'SQLite') {
@@ -64,7 +69,7 @@ additional_input_fields <- reactive({
   }
   if (input$data_type_input == 'MySQL') {
     input_tag_list <-
-      tagAppendChildren(input_tag_list, list(MySQL_input_host_tag,MySQL_input_user_tag,MySQL_input_pw_tag,MySQL_input_action,freq_input_tag,MySQL_input_live))
+      tagAppendChildren(input_tag_list, list(MySQL_input_host_tag,MySQL_input_user_tag,MySQL_input_pw_tag,MySQL_input_action,freq_input_tag,MySQL_input_live,MySQL_input_live_filter))
   }
   else {
     if (!is.null(logger_data()) && is.null(antennae_data())) {
@@ -101,7 +106,12 @@ live_data <- reactivePoll(2000, session,
                           },
                           valueFunc = function() {
                             #dbReadTable(pool(), "signals")
-                            dbGetQuery(pool(),"SELECT * FROM `signals` ORDER BY timestamp DESC LIMIT 50;")
+                            if(input$update_auto_filter){
+                              dbGetQuery(pool(),paste0("SELECT * FROM `signals` WHERE (`duration` >",input$signal_length[1],"&& `duration` < ",input$signal_length[2],")"))
+                            }
+                            else{
+                              dbGetQuery(pool(),"SELECT * FROM `signals` ORDER BY timestamp DESC LIMIT 50;")
+                            }
                           }
                           )
 
@@ -148,7 +158,6 @@ logger_data <- reactive({
               #dbDisconnect(con)
               return(NULL)
             }
-            print(input$MySQL_input_live)
             if(!input$update_auto){
               data <- dbReadTable(con, "signals")
             }

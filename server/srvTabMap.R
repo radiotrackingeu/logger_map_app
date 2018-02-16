@@ -2,8 +2,7 @@
 
 observe({
   if (!(is.null(logger_data()) ||
-        is.null(antennae_data()) || 
-        is.null(freqs())
+        is.null(antennae_data())
   ))
     js$enableTab("Map")
   else
