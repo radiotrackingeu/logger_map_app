@@ -31,12 +31,17 @@ additional_input_fields <- reactive({
   MySQL_input_host_tag <-  textInput(
     "MySQL_host",
     "Enter Host Name",
-    "192.168.1.1"
+    "192.168.8.104"
+  )
+  MySQL_input_port_tag <-  numericInput(
+    "MySQL_port",
+    "Enter Port",
+    3306
   )
   MySQL_input_user_tag <-  textInput(
     "MySQL_user",
     "Enter User Name",
-    "root"
+    "rteu"
   )
   MySQL_input_pw_tag <-  passwordInput(
     "MySQL_pw",
@@ -69,7 +74,7 @@ additional_input_fields <- reactive({
   }
   if (input$data_type_input == 'MySQL') {
     input_tag_list <-
-      tagAppendChildren(input_tag_list, list(MySQL_input_host_tag,MySQL_input_user_tag,MySQL_input_pw_tag,MySQL_input_action,freq_input_tag,MySQL_input_live,MySQL_input_live_filter))
+      tagAppendChildren(input_tag_list, list(MySQL_input_host_tag,MySQL_input_port_tag,MySQL_input_user_tag,MySQL_input_pw_tag,MySQL_input_action,freq_input_tag,MySQL_input_live,MySQL_input_live_filter))
   }
   else {
     if (!is.null(logger_data()) && is.null(antennae_data())) {
@@ -91,6 +96,7 @@ pool <- reactive({
     drv = RMySQL::MySQL(),
     dbname = "rteu",
     host = input$MySQL_host,
+    port = input$MySQL_port,
     username = input$MySQL_user,
     password = input$MySQL_pw
   )
@@ -107,10 +113,10 @@ live_data <- reactivePoll(2000, session,
                           valueFunc = function() {
                             #dbReadTable(pool(), "signals")
                             if(input$update_auto_filter){
-                              dbGetQuery(pool(),paste0("SELECT * FROM `signals` WHERE (`duration` >",input$signal_length[1],"&& `duration` < ",input$signal_length[2],")"))
+                              dbGetQuery(pool(),paste0("SELECT * FROM `signals` WHERE (`duration` >",input$signal_length[1],"&& `duration` < ",input$signal_length[2],") ORDER BY timestamp DESC LIMIT 200"))
                             }
                             else{
-                              dbGetQuery(pool(),"SELECT * FROM `signals` ORDER BY timestamp DESC LIMIT 50;")
+                              dbGetQuery(pool(),"SELECT * FROM `signals` ORDER BY timestamp DESC LIMIT 200;")
                             }
                           }
                           )
