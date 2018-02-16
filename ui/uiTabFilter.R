@@ -60,7 +60,7 @@ tabPanel("Filter",
                               value = c(0.8,1.2)),
                   selectInput("input_select_receiver", "Select Receiver/s", choices =NULL, multiple = TRUE, selectize = TRUE),
                   textOutput("total_counts"),
-                  downloadButton("download_filtered_data_sqlite")
+                  downloadButton("download_filtered_data_csv")
                   )
              
            ),
