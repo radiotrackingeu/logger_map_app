@@ -1,9 +1,8 @@
 ############ srvTabMap.R ############
 
 observe({
-  if (!(is.null(logger_data()) ||
-        is.null(antennae_data())
-  ))
+  if (!(is.null(antennae_data())||
+        is.null(filtered_data())))
     js$enableTab("Map")
   else
     js$disableTab("Map")
@@ -18,8 +17,8 @@ output$logger_map <- renderLeaflet({
     addAntennaeCones() %>% 
     addLegend(position="topleft",   
               pal=color_palette(),
-              values=filtered_data()$strength,
-              title="dB"
+              values=filtered_data()$max_signal,
+              title="SNR"
               )
 })
 
@@ -34,14 +33,13 @@ output$singal_select_prop<-renderText(
 
 miniplot_base<-reactive({
   if(input$activate_single_data){
-    ggplot(filtered_data())+geom_point(aes(timestamp,strength),color="blue")
+    ggplot(filtered_data())+geom_point(aes(timestamp,max_signal),color="blue")
   }
 })
 
 output$miniplot<-renderPlot({
   if(input$activate_single_data){
-    #ggplot(filtered_data())+geom_point(aes(timestamp,strength),color="blue")+geom_point(aes(timestamp[input$choose_single_data_set],strength[input$choose_single_data_set]),color="red")
-    miniplot_base() + geom_point(aes(timestamp[input$choose_single_data_set],strength[input$choose_single_data_set]),color="red")
+    miniplot_base() + geom_point(aes(timestamp[input$choose_single_data_set],max_signal[input$choose_single_data_set]),color="red")
     }
 })
 
@@ -56,7 +54,7 @@ observeEvent(input$show_antennae_outline, {
 color_palette <- reactive({
   pal <- colorNumeric(
     palette = "Reds",
-    domain = filtered_data()$strength,
+    domain = filtered_data()$max_signal,
     reverse = FALSE)
   pal
 })
@@ -75,12 +73,18 @@ observe({
 
 # creates basic map
 map <- reactive({
-  leaflet() %>% addProviderTiles(providers[[input$choose_map]])
+  leaflet() %>% addProviderTiles(providers[[input$choose_map]]) %>% addMeasure(position = "bottomleft", 
+                                                                               primaryLengthUnit = "meters",  
+                                                                               primaryAreaUnit = "sqmeters",
+                                                                               activeColor = "blue",
+                                                                               completedColor = "red") %>% addEasyButton(easyButton(
+    icon="fa-crosshairs", title="Locate Me",
+    onClick=JS("function(btn, map){ map.locate({setView: true}); }"))) %>% addScaleBar(position="bottomright")
 })
 
 # adds circles at antennae positions on given map.
 addAntennaePositions<-function(m) {
-  m %>% addCircles(group="antennae_positions", lng=antennae_data()$Long,lat = antennae_data()$Lat)
+  m %>% addCircles(group="antennae_positions", lng=antennae_data()$pos_x,lat = antennae_data()$pos_y)
 }
 
 # adds the cone outline to antennae on given map.
@@ -99,19 +103,18 @@ addDetectionCones<-function(m) {
   )
   for(p in 1:nrow(data)){
     if (!(data$receiver[p]%in%antennae_data()[,1])) {
-      # print(paste0("antenna '",data$receiver[p],"' not defined in ",input$data_position_input$name ))
       next
     }
     a<-antennae_cones()[[data$receiver[p]]]
     label_kegel <- paste0("Signal Properties:",br(),
                           "Receiver: ",data$receiver[p], br(),
                           "Date and Time: ", data$time[p],br(),
-                          "Strength: ", data$strength[p],br(),
+                          "Strength: ", data$max_signal[p],br(),
                           "Length: ", data$duration[p],br(),
-                          "Bandwidth: ", data$bw[p],br(),
-                          "Frequency: ",data$freq[p]
+                          "Bandwidth: ", data$signal_bw[p],br(),
+                          "Frequency: ",data$signal_freq[p]
     )
-    m<-m %>% addPolygons(lng=a$x,lat=a$y,fillColor = color_palette()(data$strength[p]),fillOpacity=0.8,stroke=FALSE,popup=label_kegel, group="bats")
+    m<-m %>% addPolygons(lng=a$x,lat=a$y,fillColor = color_palette()(data$max_signal[p]),fillOpacity=0.8,stroke=FALSE,popup=label_kegel, group="bats")
   }
   return(m)
 }
@@ -123,13 +126,13 @@ antennae_cones<-reactive({
   if (!is.null(antennae_data())) {
     for(a in 1:nrow(antennae_data())){
       antennae<-antennae_data()[a,]
-      x<-antennae$Long
-      y<-antennae$Lat
-      direction<-antennae$Direction
-      bw<-antennae$Beamwidth
-      len<-100*antennae$Gain
+      x<-antennae$pos_x
+      y<-antennae$pos_y
+      direction<-antennae$orientation
+      bw<-antennae$beam_width
+      len<-100*antennae$gain
       wgs<-kegelcreation(x,y,direction,len,bw) # Many warnings...
-      cones[[antennae$Receiver]]<-list(x=c(wgs$X,x), y=c(wgs$Y,y))
+      cones[[antennae$receiver]]<-list(x=c(wgs$X,x), y=c(wgs$Y,y))
     }
   }
   cones

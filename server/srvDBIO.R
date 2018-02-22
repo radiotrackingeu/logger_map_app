@@ -22,13 +22,20 @@ filter_data_and_save <- function(filepath_db,filepath_filterSettings, receiver){
 
 
 output$download_filtered_data_sqlite <- downloadHandler(
-    filename = "filtered_data.sqlite",
+    filename = function() {
+      "filtered_data.sqlite"
+    },
     content = function(file) {
       con <- dbConnect(RSQLite::SQLite(), file)
-      print(str(filtered_data()))
-      dbWriteTable(con,"rteu_logger_data",filtered_data(),overwrite=TRUE)
-      dbWriteTable(con,"rteu_freqs",freqs(),overwrite=TRUE)
-      dbWriteTable(con,"rteu_antenna",antennae_data(),overwrite=TRUE)
+      if(!is.null(logger_data())){
+        dbWriteTable(con,"rteu_logger_data",logger_data(),overwrite=TRUE)
+      }
+      if(!is.null(freqs())){
+        dbWriteTable(con,"rteu_freqs",freqs(),overwrite=TRUE)
+      }
+      if(!is.null(antennae_data())){
+        dbWriteTable(con,"rteu_antenna",antennae_data(),overwrite=TRUE)
+      }
       dbDisconnect(con)
     }
     
@@ -57,7 +64,7 @@ add_logger_file_to_db <- function(file,filepath_db,receiver_name=NULL){
   
   data$X<-NULL # bug in the log file - lines ends with ";"
   
-  data$freq<-(data$freq+MidFreq)/1000 # Correct to abosult Frequency in kHz
+  data$signal_freq<-(data$signal_freq+MidFreq)/1000 # Correct to abosult Frequency in kHz
   
   con = dbConnect(RSQLite::SQLite(), dbname=filepath_db)
   

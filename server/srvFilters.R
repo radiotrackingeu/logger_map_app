@@ -7,7 +7,7 @@ filter_data_time_interval <- function(data,time_distance){
   #find for each receiver
   list_of_receivers<-unique(data$receiver)
   #and each frequency
-  list_of_frequencies<-unique(data$freq_tag)
+  list_of_frequencies<-unique(data$signal_freq_tag)
   #signals which appear betweeen time_distance[1] and time_distance[2] seconds
   return_tmp<-NULL
   for(i in list_of_receivers){
@@ -40,21 +40,21 @@ filter_data_time_interval <- function(data,time_distance){
 }
 
 filter_signal_bandwidth <- function(data,pulse_bandwidth){
-  return(subset(data, (data$bw>(pulse_bandwidth[1])) & (data$bw<(pulse_bandwidth[2]))))
+  return(subset(data, (data$singal_bw>(pulse_bandwidth[1])) & (data$signal_bw<(pulse_bandwidth[2]))))
 }
 
 filter_signal_strength <- function(data,pulse_strength){
-  data$strength[data$strength==-1000]<- (-60) # old rtlsdrdetect outputs for some reason -1000
-  return(subset(data, (data$strength>pulse_strength[1]) &(data$strength<pulse_strength[2]) ))
+  data$max_signal[data$max_signal==-1000]<- (-60) # old rtlsdrdetect outputs for some reason -1000
+  return(subset(data, (data$max_signal>pulse_strength[1]) &(data$max_signal<pulse_strength[2]) ))
 }
 
 filter_data_freq <- function(data,freq,freq_error,mid_freq,freq_labels = NULL){
   freq_sorted<-NULL
   for(i in freq){
-    tmp<-subset(data, (data$freq>(i-freq_error)) & (data$freq<(i+freq_error)))
+    tmp<-subset(data, (data$signal_freq>(i-freq_error)) & (data$signal_freq<(i+freq_error)))
     if(nrow(tmp)>0){
       if(is.null(freq_labels)){
-        tmp$freq_tag<-paste0(as.character((i+mid_freq)/1000),"MHz")
+        tmp$freq_tag<-paste0((i+mid_freq/1000)," MHz")
       }
       else
       {

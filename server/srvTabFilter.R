@@ -1,9 +1,7 @@
 ############ srvTabGraph.R ############
 
 observe({
-  if (!(is.null(logger_data()) #||
-        #is.null(antennae_data()) #|| 
-        #is.null(freqs())
+  if (!(is.null(logger_data())
       ))
     js$enableTab("Filter")
   else
@@ -47,7 +45,7 @@ output$single_freq_num_input <- renderUI(
 
 plot_time_signal <- function(data, multifilter){
   
-  p<-ggplot(data) + geom_point(aes(timestamp, strength, color=receiver), size=I(0.8)) + labs(x="Time", y = "Signal Strength")
+  p<-ggplot(data) + geom_point(aes(timestamp, max_signal, color=receiver), size=I(0.8)) + labs(x="Time", y = "Signal Strength")
   if(multifilter){
     p + facet_wrap(~ data$freq_tag)
   }
@@ -73,7 +71,7 @@ filtered_data <- reactive({
     tempo<-filter_data_length(tempo,input$signal_length)
   }
   if(input$filter_one_freq){
-    tempo<-filter_data_freq(tempo,input$single_freq,input$freq_error,input$center_freq)
+    tempo<-filter_data_freq(tempo,input$single_freq,input$freq_error,input$center_freq,input$single_freq/1000)
   }
   if(input$filter_freq){
     tempo<-filter_data_freq(tempo,freqs()[["freq"]],input$freq_error,input$center_freq,freqs()[["label"]])
@@ -82,7 +80,7 @@ filtered_data <- reactive({
     tempo<-filter_signal_strength(tempo,input$signal_strength)
   }
   if(input$filter_bw){
-    tempo<-filter_signal_bandwidth(tempo,input$signal_bw)
+    tempo<-filter_signal_bandwidth(tempo,input$bw)
   }
   if(input$filter_interval){
     tempo<-filter_data_time_interval(tempo,input$signal_interval)
@@ -124,11 +122,10 @@ output$facet <- renderPlot({
 output$histo <- renderPlot({
   if(is.null(filtered_data()))
     return(NULL)
-  ggplot(filtered_data()) + geom_histogram(aes(freq),bins=200)+ scale_y_log10()
+  ggplot(filtered_data()) + geom_histogram(aes(signal_freq),bins=200)+ scale_y_log10()
 })
 
 output$histo_length <- renderPlot({
-  require("ggplot2")
   if(is.null(logger_data())){
     return(NULL)
   }
@@ -140,14 +137,14 @@ output$histo_strength <- renderPlot({
   if (is.null(filtered_data()))
     return(NULL)
   
-  ggplot(filtered_data()) + geom_histogram(aes(strength),bins= 200)
+  ggplot(filtered_data()) + geom_histogram(aes(max_signal),bins= 200)
 })
 
 output$histo_bandwidth<- renderPlot({
   if (is.null(filtered_data()))
     return(NULL)
   
-  ggplot(filtered_data()) + geom_histogram(aes(bw),bins= 200)
+  ggplot(filtered_data()) + geom_histogram(aes(signal_bw),bins= 200)
 })
 
 

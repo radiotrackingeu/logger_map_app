@@ -4,11 +4,12 @@ required_packages<-c("shiny",
                      "rgdal",
                      "DBI",
                      "RSQLite",
-                     "mapview",
+                     #"mapview",
                      "htmlwidgets",
                      "shinyjs",
                      "RMySQL",
-                     "pool")
+                     "pool",
+                     "tools")
 
 install_and_load_packages <- function(x){
   for( i in x ){
@@ -20,17 +21,6 @@ install_and_load_packages <- function(x){
       require( i , character.only = TRUE )
     }
   }
-}
-
-#taken from https://github.com/daattali/advanced-shiny
-# Call this function with an input (such as `textInput("text", NULL, "Search")`) if you
-# want to add an input to the navbar
-navbarPageWithInputs <- function(..., inputs) {
-  navbar <- navbarPage(...)
-  form <- tags$form(style= "float:right", class = "navbar-form", inputs)
-  navbar[[3]][[1]]$children[[1]] <- htmltools::tagAppendChild(
-    navbar[[3]][[1]]$children[[1]], form)
-  navbar
 }
 
 jscode <- "
@@ -69,11 +59,10 @@ ui <- tagList(
   useShinyjs(),
   extendShinyjs(text=jscode),
   inlineCSS(css),
-  navbarPageWithInputs(id="navbar", "LoggerMapApp",
+  navbarPage(id="navbar", "LoggerMapApp",
     source(file.path("ui", "uiTabData.R"),local=TRUE)$value,
     source(file.path("ui", "uiTabFilter.R"),local=TRUE)$value,
-    source(file.path("ui", "uiTabMap.R"),local=TRUE)$value,
-    inputs=downloadButton("dl", label = "Download")
+    source(file.path("ui", "uiTabMap.R"),local=TRUE)$value
   )
 )
 

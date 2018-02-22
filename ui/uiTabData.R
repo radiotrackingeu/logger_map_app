@@ -11,9 +11,11 @@ tabPanel("Input",
              uiOutput('data_tab_additional')
            ),
            mainPanel(tabsetPanel(
+             tabPanel("File",
+                      dataTableOutput("data_tab_get_data_table")),
              tabPanel("Logger Data",
                       dataTableOutput("data_tab_logger_table")),
-             tabPanel("Antennae",
+             tabPanel("Antennas",
                       dataTableOutput("data_tab_antennae_table")),
              tabPanel("Frequencies",
                       dataTableOutput("data_tab_freq_table"))

@@ -6,32 +6,19 @@ read_logger_data <- function(filepath) {
   if (lines_to_skip < 0) return(NULL)
   mid_freq <- findMidFreq(filepath) # find center frequency of tuner
   if (mid_freq < 0) return(NULL)
-  tryCatch({
-    print('srvFileIO::read_logger_data says')
-    print(paste('path:',filepath,'lines',lines_to_skip))
-    data <-
-      read.csv2(
-        filepath,
-        skip = lines_to_skip,
-        stringsAsFactors = FALSE,
-        dec = "."
-      )
-    data$timestamp <-
-      as.POSIXct(data$time, "%Y-%m-%d %H:%M:%S", tz = "UTC")
-    data$freq <- (data$freq + mid_freq) / 1000
-    
-  }, warning = function(w) {
-    
-  }, error = function(e) {
-    validate(need(
-      "",
-      "An error occurred while parsing the file. Please check all settings."
-    ))
-    data <- NULL
-    
-  }, finally = {
-    return(data)
-  })
+  print('srvFileIO::read_logger_data says')
+  print(paste('path:',filepath,'lines',lines_to_skip))
+  data <-
+    read.csv2(
+      filepath,
+      skip = lines_to_skip,
+      stringsAsFactors = FALSE,
+      dec = "."
+    )
+  data$timestamp <-
+    as.POSIXct(data$timestamp, "%Y-%m-%d %H:%M:%S", tz = "UTC")
+  data$signal_freq <- (data$signal_freq + mid_freq) / 1000
+  return(data)
 }
 
 findHeader <- function(file) {
@@ -39,7 +26,7 @@ findHeader <- function(file) {
   tryCatch(
     {
       tmp <- readLines(file, n = 30)
-      n <- grep("time;duration;freq;bw;strength", tmp) - 1
+      n <- grep("timestamp;samples;duration;signal_freq;signal_bw;max_signal", tmp) - 1
       if (length(n)==0) n<--1
     }, warning = function(w) {
       n<--1
