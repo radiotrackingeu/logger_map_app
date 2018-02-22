@@ -28,7 +28,7 @@ output$download_filtered_data_sqlite <- downloadHandler(
     content = function(file) {
       con <- dbConnect(RSQLite::SQLite(), file)
       if(!is.null(logger_data())){
-        dbWriteTable(con,"rteu_logger_data",logger_data(),overwrite=TRUE)
+        dbWriteTable(con,"rteu_logger_data",filtered_data(),overwrite=TRUE)
       }
       if(!is.null(freqs())){
         dbWriteTable(con,"rteu_freqs",freqs(),overwrite=TRUE)
