@@ -16,7 +16,7 @@ read_logger_data <- function(filepath) {
       dec = "."
     )
   data$timestamp <-
-    as.POSIXct(data$timestamp, "%Y-%m-%d %H:%M:%S", tz = "UTC")
+    as.POSIXct(data$timestamp, tz = "UTC")
   data$signal_freq <- (data$signal_freq + mid_freq) / 1000
   return(data)
 }

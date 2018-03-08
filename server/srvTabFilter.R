@@ -71,7 +71,7 @@ filtered_data <- reactive({
     tempo<-filter_data_length(tempo,input$signal_length)
   }
   if(input$filter_one_freq){
-    tempo<-filter_data_freq(tempo,input$single_freq,input$freq_error,input$center_freq,input$single_freq/1000)
+    tempo<-filter_data_freq(tempo,input$single_freq,input$freq_error,input$center_freq,paste0(input$single_freq/1000," MHz"))
   }
   if(input$filter_freq){
     tempo<-filter_data_freq(tempo,freqs()[["freq"]],input$freq_error,input$center_freq,freqs()[["label"]])
@@ -80,7 +80,7 @@ filtered_data <- reactive({
     tempo<-filter_signal_strength(tempo,input$signal_strength)
   }
   if(input$filter_bw){
-    tempo<-filter_signal_bandwidth(tempo,input$bw)
+    tempo<-filter_signal_bandwidth(tempo,input$signal_bw)
   }
   if(input$filter_interval){
     tempo<-filter_data_time_interval(tempo,input$signal_interval)
@@ -89,8 +89,6 @@ filtered_data <- reactive({
     return(NULL)
   }
   if(input$choose_tag!="all"&& !is.null(input$choose_tag) && input$choose_tag!=""){
-    print(input$choose_tag)
-    print(is.null(input$choose_tag))
     tempo<-subset(tempo,tempo$freq_tag==input$choose_tag)
   }
   if(input$activate_single_data){

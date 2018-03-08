@@ -4,12 +4,12 @@ required_packages<-c("shiny",
                      "rgdal",
                      "DBI",
                      "RSQLite",
-                     #"mapview",
                      "htmlwidgets",
                      "shinyjs",
                      "RMySQL",
                      "pool",
-                     "tools")
+                     "tools",
+                     "splusTimeSeries")
 
 install_and_load_packages <- function(x){
   for( i in x ){
@@ -54,6 +54,8 @@ border-color: #f8f8f8 !important;
 
 
 install_and_load_packages(required_packages)
+
+options(digits.secs=3)
 
 ui <- tagList(
   useShinyjs(),

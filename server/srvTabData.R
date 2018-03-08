@@ -133,15 +133,12 @@ get_data <- reactive({
   switch (input$data_type_input,
           CSV = {
             inFile <- input$data_logger_input_csv
-            print(str(inFile))
             if (is.null(inFile))
               return(NULL)
             data <- read_logger_data(inFile$datapath)
-            print(str(data))
             if (!('receiver' %in% colnames(data))) # reads data twice since the filename gets added afterwards
               data$receiver <- input$receiver_name_input
-            #data$timestamp <- as.POSIXct(data$timestamp, tz = "UTC")
-            #if (is.null(data)) return(NULL)
+            if (is.null(data)) return(NULL)
           },
           SQLite = {
             inFile <- input$data_logger_input_sqlite
