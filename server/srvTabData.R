@@ -193,7 +193,7 @@ observeEvent(input$addButton,{
 logger_data <- reactive({
   if(input$data_type_input=="MySQL"&&!is.null(input$connect_to_db)){
     if(input$update_auto){
-      get_data()
+      data_sore$data<-get_data()
     }
   }
   data_sore$data

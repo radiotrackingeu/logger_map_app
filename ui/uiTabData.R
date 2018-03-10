@@ -11,7 +11,7 @@ tabPanel("Input",
              uiOutput('data_tab_additional')
            ),
            mainPanel(tabsetPanel(
-             tabPanel("File",
+             tabPanel("Preview",
                       dataTableOutput("data_tab_get_data_table")),
              tabPanel("Logger Data",
                       dataTableOutput("data_tab_logger_table")),

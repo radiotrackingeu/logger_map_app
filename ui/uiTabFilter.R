@@ -40,7 +40,8 @@ tabPanel("Filter",
                        tabPanel("Signal Bandwidth",
                                 plotOutput("histo_bandwidth")
                        ),
-                       tabPanel("Results",plotOutput("facet"))
+                       tabPanel("Results",plotOutput("facet")),
+                       tabPanel("Time Match",dataTableOutput("angle"))
            )
            ),
            column(3,
@@ -60,6 +61,7 @@ tabPanel("Filter",
                               value = c(0.8,1.2)),
                   selectInput("input_select_receiver", "Select Receiver/s", choices =NULL, multiple = TRUE, selectize = TRUE),
                   textOutput("total_counts"),
+                  checkboxInput("correct_signal_strength",strong("Singal Strength Correction"),value = FALSE),
                   downloadButton("download_filtered_data_csv"),
                   downloadButton("download_filtered_data_sqlite")
                   )
