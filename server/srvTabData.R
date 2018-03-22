@@ -152,7 +152,7 @@ get_data <- reactive({
               return(NULL)
             }
             data <- dbReadTable(con, "rteu_logger_data")
-            data$timestamp <- as.POSIXct(data$timestamp, tz = "UTC", origin = "1960-10-01")
+            data$timestamp <- as.POSIXct(data$timestamp, tz = "UTC", origin = "1970-01-01")
             dbDisconnect(con)
           },
           MySQL = {
