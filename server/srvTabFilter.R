@@ -8,6 +8,23 @@ observe({
     js$disableTab("Filter")
 })
 
+#create tag list for each receiver
+correction_list<-reactive({
+  if(is.null(antennae_data())){
+    return(NULL)
+  }
+  correction_tag_list <- tagList()
+  for(i in unique(antennae_data()$receiver)){
+    tmp<-numericInput(paste0("corr_", i),paste0("Correction Factor for ", i),0)
+    correction_tag_list <- tagAppendChildren(correction_tag_list,tmp)
+  }
+  return(correction_tag_list)
+})
+
+output$correction_list <- renderUI({
+  correction_list()
+})
+
 # Change upon data input
 observe({
   validate(
@@ -28,9 +45,9 @@ observe({
 
 observe({
   validate(
-    need(freqs(), "Please provide frequency information in data tab.")
+    need(filtered_data(), "Please provide frequency information in data tab.")
   )
-  updateSelectInput(session, "choose_tag", label = "Select Tag", choices = c("all",freqs()[["label"]]))
+  updateSelectInput(session, "choose_tag", label = "Select Tag", choices = c("all",unique(filtered_data()$freq_tag)))
 })
 
 observe({
@@ -45,7 +62,10 @@ output$single_freq_num_input <- renderUI(
 
 plot_time_signal <- function(data, multifilter){
   
-  p<-ggplot(data) + geom_point(aes(timestamp, max_signal, color=receiver), size=I(0.8)) + labs(x="Time", y = "Signal Strength")
+  p<-ggplot(data) +
+    geom_point(aes(timestamp, max_signal, color=receiver), size=I(0.8)) +
+    labs(x="Time", y = "Signal Strength") +
+    scale_x_datetime(labels = function(x) format(x, "%H:%M:%S"))
   if(multifilter){
     p + facet_wrap(~ data$freq_tag)
   }
@@ -92,10 +112,9 @@ filtered_data <- reactive({
     tempo<-subset(tempo,tempo$freq_tag==input$choose_tag)
   }
   if(input$correct_signal_strength){
-    tempo[tempo$receiver=="flugplatz_0",]$max_signal<-tempo[tempo$receiver=="flugplatz_0",]$max_signal-0
-    tempo[tempo$receiver=="flugplatz_90",]$max_signal<-tempo[tempo$receiver=="flugplatz_90",]$max_signal-6
-    tempo[tempo$receiver=="flugplatz_180",]$max_signal<-tempo[tempo$receiver=="flugplatz_180",]$max_signal-9.5
-    tempo[tempo$receiver=="flugplatz_270",]$max_signal<-tempo[tempo$receiver=="flugplatz_270",]$max_signal-15.5
+    for(i in unique(antennae_data()$receiver)){
+      tempo[tempo$receiver==i,]$max_signal<-tempo[tempo$receiver==i,]$max_signal+input[[paste0("corr_",i)]]
+    }
   }
   if(input$activate_single_data){
     if(!is.null(tempo)){
@@ -150,28 +169,6 @@ output$histo_bandwidth<- renderPlot({
   ggplot(filtered_data()) + geom_histogram(aes(signal_bw),bins= 200)
 })
 
-output$angle<- renderDataTable({
-  if (is.null(filtered_data()))
-    return(NULL)
-  tmp_angles<-NULL
-  tmp<-subset(filtered_data(), filtered_data()$timestamp>max(filtered_data()$timestamp)-20)
-  tmp_new<-list_data_time_receiver(tmp)
-  print(tmp_new)
-  tmp_new$angle<-NA
-  for(i in 1:nrow(tmp_new)){
-    tmp_sort<-data.frame(receiver=names(tmp_new[,3:ncol(tmp_new)]),max_signal=as.numeric(tmp_new[i,3:ncol(tmp_new)]))    
-    tmp_sort<-tmp_sort[order(tmp_sort$max_signal, decreasing = TRUE, na.last=NA),]
-    print(tmp_sort)
-    if(nrow(tmp_sort)>1){
-      tmp_w1<-subset(antennae_data(),receiver==tmp_sort$receiver[1])$orientation[1]
-      tmp_w2<-subset(antennae_data(),receiver==tmp_sort$receiver[2])$orientation[1]
-      tmp_new$angle[i]<-calc_angle(tmp_sort$max_signal[1],tmp_sort$max_signal[2],tmp_w1,tmp_w2,60,60)
-    }
-  }
-  tmp_new
-})
-
-
 output$total_counts<-renderText({
   if (is.null(logger_data()))
     return(NULL)
@@ -179,11 +176,110 @@ output$total_counts<-renderText({
   return(paste("Number of observations in plot",dim(filtered_data())[1],"of total", dim(logger_data())[1]))
 })
 
-calc_angle <- function(sig_a, sig_b, angle_a, angle_b, oe_winkel_a, oe_winkel_b){
-  #condition: a<b and angle not bigger then 180°
-  half_gain_dBm<-3
-  slope_a<-(-2)*half_gain_dBm/oe_winkel_a
-  slope_b<-2*half_gain_dBm/oe_winkel_b
+# calculate time match and DoA #1
+output$angle<- renderDataTable({
+  if(is.null(angle_linear()))
+    return(NULL)
+  angle_linear()[order(angle_linear()$time,decreasing=TRUE),]
+})
+
+# output DoA plot
+output$doa_plot <- renderPlot({
+  if(is.null(doa_data()))
+    return(NULL)
+  ggplot() + geom_point(mapping=aes(x=angle_linear()$time,y=angle_linear()$angle,ymin=0,ymax=359,colour=angle_linear()$freq)) #+ geom_point(mapping=aes(x=doa_data()$time,y=doa_data()$angle,ymin=0,ymax=359),col="blue")
+  #
+})
+
+# calculate time match and DoA #2
+doa_data<- reactive({
+  if (is.null(filtered_data()))
+    return(NULL)
+  tmp_angles<-NULL
+  #tmp<-subset(filtered_data(), filtered_data()$timestamp>max(filtered_data()$timestamp)-20) # nur die letzten 20 sec??
+  tmp<-filtered_data()
+  tmp_new<-list_data_time_receiver(tmp)
+  tmp_new$angle<-NA
+  for(i in 1:nrow(tmp_new)){
+    tmp_sort<-data.frame(receiver=names(tmp_new[,3:ncol(tmp_new)]),max_signal=as.numeric(tmp_new[i,3:ncol(tmp_new)]))    
+    tmp_sort<-tmp_sort[order(tmp_sort$max_signal, decreasing = TRUE, na.last=NA),]
+    if(nrow(tmp_sort)>1){
+      tmp_front<-subset(antennae_data(),receiver==tmp_sort$receiver[1])
+      
+      tmp_angle_front<-tmp_front$orientation[1]
+      tmp_angle_left<-tmp_angle_front-90
+      if (tmp_angle_left<0)
+        tmp_angle_left<-tmp_angle_left+360
+      tmp_angle_right<-tmp_angle_front+90
+      if (tmp_angle_right>360)
+        tmp_angle_right<-tmp_angle_right-360
+      tmp_angle_rear<-tmp_angle_front+180
+      if(tmp_angle_rear>360)
+        tmp_angle_rear<-tmp_angle_rear-360
+      
+      rx_front<-tmp_front$receiver[1]
+      rx_left<-subset(antennae_data(),orientation==tmp_angle_left)$receiver[1]
+      rx_right<-subset(antennae_data(),orientation==tmp_angle_right)$receiver[1]
+      rx_rear<-subset(antennae_data(),orientation==tmp_angle_rear)$receiver[1]
+      
+      sig_front<-subset(tmp_sort,receiver==rx_front)$max_signal
+      sig_left<-subset(tmp_sort,receiver==rx_left)$max_signal
+      if(length(sig_left)==0){sig_left<-0}
+      sig_right<-subset(tmp_sort,receiver==rx_right)$max_signal
+      if(length(sig_right)==0){sig_right<-0}
+      sig_rear<-subset(tmp_sort,receiver==rx_rear)$max_signal
+      if(length(sig_rear)==0){
+        sig_rear<-0
+      }
+      
+      if(sig_left>sig_right){
+        tmp_new$angle[i]<-get_angle_linear(sig_left,sig_front,tmp_angle_left,tmp_angle_front,60,60)
+      }
+      else{
+        tmp_new$angle[i]<-get_angle_linear(sig_front,sig_right,tmp_angle_front,tmp_angle_right,60,60)
+      }
+      
+      "if(sig_left!=0&&sig_right!=0){
+        tmp_new$angle[i]<-calc_angle(sig_left,sig_right,tmp_angle_left,tmp_angle_right,60,60)
+      }else{
+        if(sig_left!=0){
+          tmp_new$angle[i]<-calc_angle(sig_left,sig_front,tmp_angle_left,tmp_angle_front,60,60)
+        }
+        if(sig_right!=0){
+          tmp_new$angle[i]<-calc_angle(sig_front,sig_right,tmp_angle_front,tmp_angle_right,60,60)
+        }
+      }"
+    }
+  }
+  tmp_new
+})
+
+angle_linear<-reactive({
+  if (is.null(filtered_data()))
+    return(NULL)
+  tmp_angles<-NULL
+  #tmp<-subset(filtered_data(), filtered_data()$timestamp>max(filtered_data()$timestamp)-20)
+  tmp<-filtered_data()
+  tmp_new<-list_data_time_receiver(tmp)
+  tmp_new$angle<-NA
+  for(i in 1:nrow(tmp_new)){
+    tmp_sort<-data.frame(receiver=names(tmp_new[,3:ncol(tmp_new)]),max_signal=as.numeric(tmp_new[i,3:ncol(tmp_new)]))    
+    tmp_sort<-tmp_sort[order(tmp_sort$max_signal, decreasing = TRUE, na.last=NA),]
+    if(nrow(tmp_sort)>1){
+      tmp_w1<-subset(antennae_data(),receiver==tmp_sort$receiver[1])$orientation[1]
+      tmp_w2<-subset(antennae_data(),receiver==tmp_sort$receiver[2])$orientation[1]
+      tmp_new$angle[i]<-get_angle_linear(tmp_sort$max_signal[1],tmp_sort$max_signal[2],tmp_w1,tmp_w2,60,60)
+    }
+  }
+  tmp_new
+})
+
+# linear approximation 
+calc_angle_linear <- function(sig_a, sig_b, angle_a, angle_b, oe_winkel_a, oe_winkel_b){
+  #condition: a<b and angle not bigger then 180
+  #half_gain_dBm<-3
+  slope_a<--input$dBLoss/input$angle_sep #(-2)*half_gain_dBm/oe_winkel_a
+  slope_b<- input$dBLoss/input$angle_sep#2*half_gain_dBm/oe_winkel_b
   inter_a<-slope_a*angle_a*(-1)
   inter_b<-angle_b*slope_b*(-1)
   dif_angle=(sig_a-sig_b-inter_a+inter_b)/(slope_a-slope_b)
@@ -193,27 +289,28 @@ calc_angle <- function(sig_a, sig_b, angle_a, angle_b, oe_winkel_a, oe_winkel_b)
   return(dif_angle)
 }
 
-# angle_a must be smaller then angle_b
+#angle_a must be smaller then angle_b
 get_angle_linear <- function(sig_a, sig_b, angle_a, angle_b, oe_winkel_a, oe_winkel_b){
   #first the one with the smaller angle
   #take the smaller angle between the two antennas
   if(angle_a<angle_b){
     if(angle_b-angle_a>180){
-      result<-calc_angle(sig_b, sig_a, angle_b, angle_a, oe_winkel_b, oe_winkel_a)+180
+      result<-calc_angle_linear(sig_b, sig_a, angle_b, angle_a, oe_winkel_b, oe_winkel_a)+180
     }else{
-      result<-calc_angle(sig_a, sig_b, angle_a, angle_b, oe_winkel_a, oe_winkel_b)
+      result<-calc_angle_linear(sig_a, sig_b, angle_a, angle_b, oe_winkel_a, oe_winkel_b)
     }
   }else
   {
     if(angle_b-angle_a<(-180)){
-      result<-calc_angle(sig_a, sig_b, angle_a, angle_b, oe_winkel_a, oe_winkel_b)+180
+      result<-calc_angle_linear(sig_a, sig_b, angle_a, angle_b, oe_winkel_a, oe_winkel_b)+180
     }else{
-      result<-calc_angle(sig_b, sig_a, angle_b, angle_a, oe_winkel_b, oe_winkel_a)
+      result<-calc_angle_linear(sig_b, sig_a, angle_b, angle_a, oe_winkel_b, oe_winkel_a)
     }
   }
   return(result)
 }
 
+#time match between receiver signals
 list_data_time_receiver <- function(data){
   #find for each receiver
   list_of_receivers<-unique(data$receiver)
@@ -223,9 +320,9 @@ list_data_time_receiver <- function(data){
   return_tmp<-NULL
   for(k in list_of_frequencies){
     print(k)
-    for(t in min(data$timestamp):max(data$timestamp)){
-      t<-as.POSIXct(t,origin='1970-01-01')
-      timeslot_data <- subset(data,data$timestamp>=t&data$timestamp<t+1)
+    for(t in seq(min(data$timestamp),max(data$timestamp),3)){
+      t<-as.POSIXct(t, tz = "UTC", origin='1970-01-01')
+      timeslot_data <- subset(data,data$timestamp>=t&data$timestamp<t+3)
       tmp<-data.frame(time=t, freq=k)
       for(i in list_of_receivers){
         one_receiver <- subset(timeslot_data,receiver==i)

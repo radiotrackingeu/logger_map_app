@@ -41,7 +41,8 @@ tabPanel("Filter",
                                 plotOutput("histo_bandwidth")
                        ),
                        tabPanel("Results",plotOutput("facet")),
-                       tabPanel("Time Match",dataTableOutput("angle"))
+					   tabPanel("DoA",dataTableOutput("angle")),
+                       tabPanel("DoA Plot",plotOutput("doa_plot"))
            )
            ),
            column(3,
@@ -62,6 +63,9 @@ tabPanel("Filter",
                   selectInput("input_select_receiver", "Select Receiver/s", choices =NULL, multiple = TRUE, selectize = TRUE),
                   textOutput("total_counts"),
                   checkboxInput("correct_signal_strength",strong("Singal Strength Correction"),value = FALSE),
+				          uiOutput("correction_list"),
+                  numericInput("dBLoss","dB between Antennas", 13 , min = 0 ,max = 50),
+                  numericInput("angle_sep","Anlge between Antennas", 90 , min = 0 ,max = 359),
                   downloadButton("download_filtered_data_csv"),
                   downloadButton("download_filtered_data_sqlite")
                   )
