@@ -80,7 +80,7 @@ output$timediffs_plot <- renderPlot({
   a<-input$temp_cal_a
   b<-input$temp_cal_b
   tmp$temperature<-log(60/as.numeric(tmp$td)/a)/b
-  ggplot()+geom_point(aes(x=tmp$timestamp,y=tmp$temperature))+ylim(10,40)
+  ggplot()+geom_point(aes(x=tmp$timestamp,y=tmp$temperature))+ylim(10,45)
 })
 
 

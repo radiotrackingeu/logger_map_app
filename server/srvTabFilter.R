@@ -43,7 +43,8 @@ observe({
   updateSliderInput(session, "slider_datetime",min=min_date,max=max_date,value = c(min_date,max_date) )
 })
 
-observe({
+observeEvent(input$filter_freq,
+             {
   validate(
     need(filtered_data(), "Please provide frequency information in data tab.")
   )
@@ -57,6 +58,12 @@ observe({
 output$single_freq_num_input <- renderUI(
   if(input$filter_one_freq){
     numericInput("single_freq", "", value = 150175)
+  }
+)
+
+output$multi_freq_tag_input <- renderUI(
+  if(input$filter_freq){
+    selectInput("choose_tag", "Choose Tag", choices = NULL)
   }
 )
 

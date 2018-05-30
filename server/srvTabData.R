@@ -111,13 +111,13 @@ onStop(function() {
 })
 
 # check automatically every 2 seconds for new data
-live_data <- reactivePoll(3500, session, 
+live_data <- reactivePoll(3500000, session, 
   checkFunc = function() {
     if(is.null(input$connect_to_db))
       return(NULL)
     if(input$connect_to_db<1)
       return(NULL)
-    dbGetQuery(pool(),"SELECT COUNT(*) FROM `signals` ")
+    dbGetQuery(pool(),"SELECT MAX(id) FROM `signals`;")
   },
   valueFunc = function() {
     if(input$update_auto_filter){
@@ -167,7 +167,8 @@ get_data <- reactive({
               return(NULL)
             }
             if(!input$update_auto){
-              data <- dbReadTable(con, "signals")
+              data <- dbGetQuery(pool(),"SELECT * FROM `signals` ORDER BY id DESC LIMIT 2000;")
+              #data <- dbReadTable(con, "signals")
             }
             else{
               data<-live_data()
