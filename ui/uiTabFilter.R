@@ -46,7 +46,10 @@ tabPanel("Filter",
                        tabPanel("Temperature",dataTableOutput("timediffs")),
                        tabPanel("T Plot",{
                          plotOutput("timediffs_plot")
-                         })
+                         }),
+                       tabPanel("TD Plot",{
+                         plotOutput("true_timediffs_plot")
+                       })
                        
            )
            ),

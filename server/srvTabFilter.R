@@ -72,7 +72,7 @@ plot_time_signal <- function(data, multifilter){
   p<-ggplot(data) +
     geom_point(aes(timestamp, max_signal, color=receiver), size=I(0.8)) +
     labs(x="Time", y = "Signal Strength") +
-    scale_x_datetime(labels = function(x) format(x, "%H:%M:%S"))
+    scale_x_datetime(labels = function(x) format(x, "%H:%M:%S")) + ylim(0,100)
   if(multifilter){
     p + facet_wrap(~ data$freq_tag)
   }

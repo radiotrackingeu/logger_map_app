@@ -83,6 +83,10 @@ output$timediffs_plot <- renderPlot({
   ggplot()+geom_point(aes(x=tmp$timestamp,y=tmp$temperature))+ylim(10,45)
 })
 
+output$true_timediffs_plot <- renderPlot({
+  tmp<-calc_time_distance(filtered_data())
+  ggplot()+geom_point(aes(x=tmp$timestamp,y=tmp$td))#+ylim(10,45)
+})
 
 filter_signal_bandwidth <- function(data,pulse_bandwidth){
   return(subset(data, (data$signal_bw>(pulse_bandwidth[1])) & (data$signal_bw<(pulse_bandwidth[2]))))
